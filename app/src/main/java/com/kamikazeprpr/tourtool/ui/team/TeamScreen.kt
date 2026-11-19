@@ -77,6 +77,7 @@ fun TeamScreen(teamId: Long, onBack: () -> Unit) {
     var editMode by rememberSaveable { mutableStateOf(false) }
     var deleteTarget by remember { mutableStateOf<Member?>(null) }
     var tagTarget by remember { mutableStateOf<Member?>(null) }
+    var confirmClearTags by remember { mutableStateOf(false) }
     var tagVersion by remember { mutableStateOf(0) }
 
     val memberTags by produceState(
@@ -252,22 +253,64 @@ fun TeamScreen(teamId: Long, onBack: () -> Unit) {
                     onClick = { if (!editMode) editingMemberId = m.id },
                     onLongClick = { if (!editMode) tagTarget = m },
                     onDelete = { deleteTarget = m },
+                    onRemoveTag = { tagId ->
+                        vm.removeMemberTag(m.id, tagId)
+                        tagVersion++
+                    },
                 )
                 Spacer(Modifier.height(10.dp))
             }
 
             Spacer(Modifier.height(8.dp))
-            Button(
-                onClick = { showExport = true },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(58.dp),
-                shape = RoundedCornerShape(12.dp),
-            ) {
-                Text("做成表格，发出去", fontSize = 19.sp)
+            if (editMode) {
+                Button(
+                    onClick = { confirmClearTags = true },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(58.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                        containerColor = StateBad,
+                    ),
+                ) {
+                    Text("清除全部标签", fontSize = 19.sp)
+                }
+            } else {
+                Button(
+                    onClick = { showExport = true },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(58.dp),
+                    shape = RoundedCornerShape(12.dp),
+                ) {
+                    Text("做成表格，发出去", fontSize = 19.sp)
+                }
             }
             Spacer(Modifier.height(16.dp))
         }
+    }
+
+    if (confirmClearTags) {
+        AlertDialog(
+            onDismissRequest = { confirmClearTags = false },
+            title = { Text("确认清除？", fontSize = 22.sp) },
+            text = {
+                Text(
+                    "这一团所有人身上的标签都会清掉。标签本身还在，以后还能再勾。",
+                    fontSize = 17.sp,
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    vm.clearAllTags()
+                    tagVersion++
+                    confirmClearTags = false
+                }) { Text("确认", fontSize = 18.sp, color = StateBad) }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmClearTags = false }) { Text("取消", fontSize = 18.sp) }
+            },
+        )
     }
 
     tagTarget?.let { target ->
@@ -317,6 +360,7 @@ private fun MemberRow(
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     onDelete: () -> Unit,
+    onRemoveTag: (Long) -> Unit,
 ) {
     val ok = m.status == Member.STATUS_AUTO_OK || m.status == Member.STATUS_MANUAL_OK
     val reading = m.failReasons.orEmpty().split("；").filter { it.isNotBlank() }
@@ -361,14 +405,34 @@ private fun MemberRow(
                     ) {
                         tags.forEach { tag ->
                             val style = com.kamikazeprpr.tourtool.ui.theme.TagColors.of(tag.colorIndex)
-                            Text(
-                                text = tag.label,
-                                fontSize = 13.sp,
-                                color = style.fg,
+                            Row(
                                 modifier = Modifier
                                     .background(style.bg, RoundedCornerShape(6.dp))
-                                    .padding(horizontal = 8.dp, vertical = 3.dp),
-                            )
+                                    .padding(start = 8.dp, end = if (editMode) 4.dp else 8.dp, top = 3.dp, bottom = 3.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    text = tag.label,
+                                    fontSize = 13.sp,
+                                    color = style.fg,
+                                )
+                                if (editMode) {
+                                    // 编辑模式下每块标签尾巴上挂个小红叉，点了直接摘掉，不弹确认
+                                    Box(
+                                        modifier = Modifier
+                                            .size(24.dp)
+                                            .clickable { onRemoveTag(tag.id) },
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Close,
+                                            contentDescription = "删掉这个标签",
+                                            tint = StateBad,
+                                            modifier = Modifier.size(14.dp),
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
                 }

@@ -79,6 +79,9 @@ interface TagDao {
     @Query("DELETE FROM member_tag WHERE memberId = :memberId")
     suspend fun unlinkAll(memberId: Long)
 
+    @Query("DELETE FROM member_tag WHERE memberId IN (SELECT id FROM member WHERE teamId = :teamId)")
+    suspend fun clearTeamTags(teamId: Long)
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(tag: Tag): Long
 

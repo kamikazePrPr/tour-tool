@@ -61,6 +61,11 @@ class TourRepository(private val db: TourDatabase) {
         tagIds.forEach { db.tagDao().link(MemberTag(memberId, it)) }
     }
 
+    suspend fun removeMemberTag(memberId: Long, tagId: Long) = db.tagDao().unlink(memberId, tagId)
+
+    /** 清掉这个团所有人身上的标签，标签本身还留在库里 */
+    suspend fun clearTeamTags(teamId: Long) = db.tagDao().clearTeamTags(teamId)
+
     suspend fun updateMember(member: Member) = db.memberDao().update(member)
 
     suspend fun deleteMember(member: Member) = db.memberDao().delete(member)

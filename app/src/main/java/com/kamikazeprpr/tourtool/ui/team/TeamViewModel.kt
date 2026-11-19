@@ -184,6 +184,14 @@ class TeamViewModel(app: Application, private val teamId: Long) : AndroidViewMod
         viewModelScope.launch { repo.setMemberTags(memberId, tagIds) }
     }
 
+    fun removeMemberTag(memberId: Long, tagId: Long) {
+        viewModelScope.launch { repo.removeMemberTag(memberId, tagId) }
+    }
+
+    fun clearAllTags() {
+        viewModelScope.launch { repo.clearTeamTags(teamId) }
+    }
+
     companion object {
         // 解码上限要高于识别尺寸，否则等于先毁掉细节再放大
         private const val DECODE_MAX_SIDE = 3200
