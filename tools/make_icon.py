@@ -14,7 +14,7 @@ CHARS = "旅游登记"
 # 2x2 四个字的中心位置（相对画布）。
 # 桌面图标常被裁成圆形，圆形可见半径是 0.5 画布宽，
 # 所以字心收到 0.30/0.70、字号压到 0.24，四个角才不会被切掉。
-CENTERS = [(0.30, 0.30), (0.70, 0.30), (0.30, 0.70), (0.70, 0.70)]
+CENTERS = [(0.325, 0.325), (0.675, 0.325), (0.325, 0.675), (0.675, 0.675)]
 
 
 def draw_icon(size: int, bg, text_ratio: float) -> Image.Image:
@@ -44,8 +44,8 @@ DENSITIES = [
 ]
 
 # 先在大画布上画，再逐级缩小，边缘才干净
-BIG_LEGACY = draw_icon(1024, BLUE, 0.24)
-BIG_FG = draw_icon(1024, None, 0.24 * 0.66)   # 自适应图标安全区是中间 72/108
+BIG_LEGACY = draw_icon(1024, BLUE, 0.225)
+BIG_FG = draw_icon(1024, None, 0.225 * 0.66)   # 自适应图标安全区是中间 72/108
 
 for folder, legacy_px, fg_px in DENSITIES:
     save(BIG_LEGACY, folder, "ic_launcher.png", legacy_px)
