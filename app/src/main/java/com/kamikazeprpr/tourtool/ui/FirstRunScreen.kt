@@ -14,6 +14,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -31,13 +32,13 @@ import com.kamikazeprpr.tourtool.ui.theme.TextMain
 import com.kamikazeprpr.tourtool.ui.theme.TextMuted
 
 /**
- * 安装后第一次打开：隐私与数据使用声明。
+ * 安装后第一次打开：个人信息处理与使用声明。
  *
  * 正文由 Codex 依据《个人信息保护法》《网络安全法》《数据安全法》
- * 和 GB/T 35273-2020 起草，覆盖处理目的、敏感个人信息单独说明、
- * 处理方式、对外提供情况、保存与删除、个人权利六项要素。
+ * 和 GB/T 35273-2020 以法律语言起草，覆盖处理目的、敏感个人信息的单独同意、
+ * 处理方式、对外提供禁令、保存期限、个人权利与使用限制。
  *
- * 只在第一次出现，点「我已知晓，继续使用，之后不再提示」之后永不再显示。
+ * 只在第一次出现；点「我已知晓，继续使用，之后不再提示」后永不再显示。
  */
 @Composable
 fun FirstRunScreen(
@@ -50,69 +51,88 @@ fun FirstRunScreen(
         modifier = Modifier
             .fillMaxSize()
             .systemBarsPadding()
-            .background(MaterialTheme.colorScheme.background)
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 24.dp, vertical = 24.dp),
-        verticalArrangement = Arrangement.Top,
+            .background(MaterialTheme.colorScheme.background),
     ) {
-        Text(
-            text = "使用前，请先看一下",
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-            color = TextMain,
-        )
-        Spacer(Modifier.height(18.dp))
-
-        Paragraph(
-            "为游客办理登记、统一购买旅游保险，并在出行时核对身份，需要收集姓名、身份证号、" +
-                "出生日期等信息。身份证号和出生日期属于敏感个人信息，只在办理登记和投保时使用，不做其他用途。"
-        )
-        Paragraph(
-            "相册中的照片只供读取，不修改、不删除、不上传，识别在本机离线完成。" +
-                "资料只存放在本机私有目录，不上传、不做云备份、不共享，也没有广告和统计。"
-        )
-        Paragraph(
-            "应用只联网访问 GitHub 查询新版本，不会通过联网发送游客资料。" +
-                "日志不含姓名和完整号码，保存 7 天后自动删除。"
-        )
-        Paragraph(
-            "不得用这个软件做违法的事，比如冒用别人的身份、改动证件上的信息、" +
-                "没经过本人同意就把别人的证件登记进来。您仍然可以要求查阅、更正、删除资料，" +
-                "也可以随时删除某个团或全部数据，删掉就找不回来；已经发出去的 Excel 表格不受影响，" +
-                "需要另外联系收件人处理。"
-        )
-
-        Spacer(Modifier.height(26.dp))
-
-        Button(
-            onClick = onAgree,
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(60.dp),
-            shape = RoundedCornerShape(12.dp),
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 22.dp, vertical = 20.dp),
         ) {
-            Text("我已知晓，继续使用，之后不再提示", fontSize = 17.sp)
+            Text(
+                text = "个人信息处理与使用声明",
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Bold,
+                color = TextMain,
+            )
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = "请在使用前完整阅读以下内容",
+                fontSize = 14.sp,
+                color = TextMuted,
+            )
+            Spacer(Modifier.height(18.dp))
+
+            Paragraph(
+                "本应用仅从用户经被采集人同意后拍摄或选取的证件照片中，收集姓名、性别、公民身份号码、" +
+                    "出生日期。处理目的仅限为游客办理出行登记、统一投保旅游意外险及出行时核验身份，不得另作他用。"
+            )
+            Paragraph(
+                "公民身份号码、出生日期依《个人信息保护法》第二十八条按敏感个人信息处理。" +
+                    "个人信息处理者应事先向被采集人告知处理的必要性及对个人权益的影响，并取得其单独同意。"
+            )
+            Paragraph(
+                "个人信息均在本设备本地离线处理，仅存于应用私有目录，不上传任何服务器、不进行云备份，" +
+                    "不作自动化决策或画像。不向任何第三方提供、转让或公开披露；" +
+                    "严禁出售、非法买卖、非法向他人提供个人信息。"
+            )
+            Paragraph(
+                "仅连接 GitHub 相关域名检查、下载应用更新，不经该等连接传输任何个人信息。" +
+                    "本地运行日志不含姓名及完整证件号码，保存 7 日后自动删除。" +
+                    "个人信息的保存期限截至用户主动删除之时；用户可删除单个团或全部数据，删除后不可恢复，" +
+                    "已导出的表格文件不因本机删除而失效。"
+            )
+            Paragraph(
+                "用户及被采集人有权查阅、复制、更正、删除其个人信息及撤回同意，" +
+                    "撤回不影响此前基于同意已进行的处理。" +
+                    "用户不得利用本应用从事违法违规活动，包括但不限于冒用他人身份、伪造变造证件、" +
+                    "未经同意收集他人个人信息、出售或非法提供他人个人信息。"
+            )
         }
 
-        Spacer(Modifier.height(10.dp))
-
-        OutlinedButton(
-            onClick = { showExitConfirm = true },
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(56.dp),
-            shape = RoundedCornerShape(12.dp),
+                .background(MaterialTheme.colorScheme.background)
+                .padding(horizontal = 22.dp, vertical = 12.dp),
         ) {
-            Text("不使用，退出", fontSize = 18.sp)
+            HorizontalDivider(
+                modifier = Modifier.padding(bottom = 12.dp),
+                thickness = 1.dp,
+                color = MaterialTheme.colorScheme.outlineVariant,
+            )
+            Button(
+                onClick = onAgree,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(58.dp),
+                shape = RoundedCornerShape(12.dp),
+            ) {
+                Text("我已知晓，继续使用，之后不再提示", fontSize = 17.sp)
+            }
+
+            Spacer(Modifier.height(10.dp))
+
+            OutlinedButton(
+                onClick = { showExitConfirm = true },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+                shape = RoundedCornerShape(12.dp),
+            ) {
+                Text("不使用，退出", fontSize = 18.sp)
+            }
         }
-
-        Spacer(Modifier.height(16.dp))
-
-        Text(
-            text = "这份说明随时可以在「设置 → 关于」里再看一遍。",
-            fontSize = 14.sp,
-            color = TextMuted,
-        )
     }
 
     if (showExitConfirm) {
@@ -134,9 +154,9 @@ fun FirstRunScreen(
 private fun Paragraph(text: String) {
     Text(
         text = text,
-        fontSize = 17.sp,
-        lineHeight = 27.sp,
+        fontSize = 16.sp,
+        lineHeight = 26.sp,
         color = TextMain,
     )
-    Spacer(Modifier.height(16.dp))
+    Spacer(Modifier.height(15.dp))
 }
