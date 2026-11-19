@@ -33,6 +33,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -66,6 +67,23 @@ fun TeamScreen(teamId: Long, onBack: () -> Unit) {
     }
 
     var editingMemberId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var showExport by rememberSaveable { mutableStateOf(false) }
+
+    val tagsByMember by produceState(
+        initialValue = emptyMap<Long, List<String>>(),
+        members.size,
+    ) { value = vm.tagsForExport() }
+
+    if (showExport) {
+        com.kamikazeprpr.tourtool.ui.export.ExportScreen(
+            teamName = team?.name.orEmpty(),
+            members = members,
+            tagsByMember = tagsByMember,
+            onBack = { showExport = false },
+        )
+        return
+    }
+
     val editing = members.firstOrNull { it.id == editingMemberId }
     if (editing != null) {
         com.kamikazeprpr.tourtool.ui.member.MemberEditScreen(
@@ -194,6 +212,18 @@ fun TeamScreen(teamId: Long, onBack: () -> Unit) {
                 MemberRow(m, onClick = { editingMemberId = m.id })
                 Spacer(Modifier.height(10.dp))
             }
+
+            Spacer(Modifier.height(8.dp))
+            Button(
+                onClick = { showExport = true },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(58.dp),
+                shape = RoundedCornerShape(12.dp),
+            ) {
+                Text("做成表格，发出去", fontSize = 19.sp)
+            }
+            Spacer(Modifier.height(16.dp))
         }
     }
 }

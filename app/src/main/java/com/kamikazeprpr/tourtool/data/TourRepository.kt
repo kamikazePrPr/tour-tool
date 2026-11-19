@@ -30,6 +30,10 @@ class TourRepository(private val db: TourDatabase) {
 
     fun members(teamId: Long): Flow<List<Member>> = db.memberDao().observeByTeam(teamId)
 
+    /** 一次把这个团所有人的标签捞出来：成员 id → 标签名列表 */
+    suspend fun tagsOfTeam(teamId: Long): Map<Long, List<String>> =
+        db.tagDao().tagsOfTeam(teamId).groupBy({ it.memberId }, { it.label })
+
     suspend fun updateMember(member: Member) = db.memberDao().update(member)
 
     suspend fun deleteMember(member: Member) = db.memberDao().delete(member)

@@ -90,4 +90,18 @@ interface TagDao {
 
     @Query("SELECT t.* FROM tag t INNER JOIN member_tag mt ON t.id = mt.tagId WHERE mt.memberId = :memberId ORDER BY t.sortOrder")
     fun observeTagsOf(memberId: Long): Flow<List<Tag>>
+
+    @Query(
+        """SELECT mt.memberId AS memberId, t.label AS label FROM member_tag mt
+           INNER JOIN tag t ON t.id = mt.tagId
+           INNER JOIN member m ON m.id = mt.memberId
+           WHERE m.teamId = :teamId ORDER BY t.sortOrder"""
+    )
+    suspend fun tagsOfTeam(teamId: Long): List<MemberTagLabel>
 }
+
+/** 导出时用：一次把这个团所有人的标签捞出来，避免每人查一次 */
+data class MemberTagLabel(
+    val memberId: Long,
+    val label: String,
+)
