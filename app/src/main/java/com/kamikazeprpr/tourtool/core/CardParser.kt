@@ -209,8 +209,13 @@ object CardParser {
         if (number != null) {
             val v = IdCard.validate(number)
             if (v.isNotEmpty()) {
+                // 读出来的这串数字不是身份证号（比如把银行卡号读成了 18 位）。
+                // 不把它显示给用户看——那串数字看着像号码，会让人以为是对的；
+                // 只给一句「身份证号错误」，具体哪一条不成立放在下面小字里。
+                issues += "身份证号错误"
                 issues += v
                 autoOk = false
+                number = null
             }
         }
 
@@ -251,7 +256,6 @@ object CardParser {
         // 只有号码本身就站得住脚时，才拿它去推性别和生日。
         // 号码要是没过校验（比如把银行卡号读成 18 位了），从它推出来的性别毫无意义。
         val numberTrusted = number != null && IdCard.validate(number).isEmpty()
-
         if (numberTrusted && number != null) {
             // 内部统一用 yyyyMMdd，避免 "1962-08-11" 与 "19620811" 比不上的坑
             birth = IdCard.birthFromNumber(number)?.replace("-", "")

@@ -42,6 +42,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kamikazeprpr.tourtool.core.IdCard
 import com.kamikazeprpr.tourtool.data.db.Member
+import com.kamikazeprpr.tourtool.ui.theme.StateBad
 import com.kamikazeprpr.tourtool.ui.theme.StateOk
 import com.kamikazeprpr.tourtool.ui.theme.StateWarn
 import com.kamikazeprpr.tourtool.ui.theme.TextMain
@@ -185,6 +186,19 @@ fun TeamScreen(teamId: Long, onBack: () -> Unit) {
 @Composable
 private fun MemberRow(m: Member, onClick: () -> Unit) {
     val ok = m.status == Member.STATUS_AUTO_OK || m.status == Member.STATUS_MANUAL_OK
+    val reading = m.failReasons.orEmpty().split("；").filter { it.isNotBlank() }
+
+    // 号码那一行：读到了就显示号码；没读到说"没读出"，读到的不是身份证号就说"错误"
+    val numLine = when {
+        m.idNumber.isNotBlank() -> m.idNumber
+        ok -> ""
+        reading.any { it.contains("没读出身份证号") } -> "没读出身份证号"
+        else -> "身份证号错误"
+    }
+    val numIsProblem = m.idNumber.isBlank() && !ok
+    // 小字只剩下"具体哪里不对"，避免跟上面那行重复
+    val detail = reading.filterNot { it == numLine }.joinToString("；")
+
     Card(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
@@ -208,19 +222,20 @@ private fun MemberRow(m: Member, onClick: () -> Unit) {
                 Spacer(Modifier.height(3.dp))
                 Text(
                     text = buildString {
-                        append(IdCard.genderLabel(m.gender))
-                        if (m.idNumber.isNotBlank()) {
-                            append("  ")
-                            append(m.idNumber)
+                        val g = IdCard.genderLabel(m.gender)
+                        if (g.isNotEmpty()) append(g)
+                        if (numLine.isNotEmpty()) {
+                            if (isNotEmpty()) append("  ")
+                            append(numLine)
                         }
                     },
                     fontSize = 15.sp,
-                    color = TextMuted,
+                    color = if (numIsProblem) StateBad else TextMuted,
                 )
-                if (!m.failReasons.isNullOrBlank()) {
+                if (detail.isNotBlank()) {
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        text = m.failReasons,
+                        text = detail,
                         fontSize = 14.sp,
                         color = if (ok) TextMuted else StateWarn,
                     )
