@@ -285,7 +285,30 @@ private fun EditTeamDialog(
                 TextButton(onClick = { pickWhich = null }) { Text("取消", fontSize = 17.sp) }
             },
         ) {
-            androidx.compose.material3.DatePicker(state = state)
+            androidx.compose.material3.DatePicker(
+                state = state,
+                title = {
+                    Text(
+                        "选日期",
+                        modifier = Modifier.padding(start = 24.dp, top = 16.dp),
+                        fontSize = 16.sp,
+                        color = TextMuted,
+                    )
+                },
+                headline = {
+                    // Material3 默认这里写 "Selected date"，直接换成日期本身
+                    val ms = state.selectedDateMillis
+                    Text(
+                        text = ms?.let {
+                            java.text.SimpleDateFormat("yyyy年M月d日", java.util.Locale.CHINA)
+                                .format(java.util.Date(it))
+                        } ?: "还没选",
+                        modifier = Modifier.padding(start = 24.dp, top = 8.dp, bottom = 12.dp),
+                        fontSize = 32.sp,
+                        color = TextMain,
+                    )
+                },
+            )
         }
     }
 
