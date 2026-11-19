@@ -172,7 +172,7 @@ private fun NewTeamDialog(onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
         },
         confirmButton = {
             TextButton(onClick = { onConfirm(name) }, enabled = name.isNotBlank()) {
-                Text("好了", fontSize = 20.sp)
+                Text("确认", fontSize = 18.sp)
             }
         },
         dismissButton = {
