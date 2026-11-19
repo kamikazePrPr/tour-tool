@@ -1,49 +1,60 @@
-"""生成 App 图标：蓝底白字、2x2 排列的「旅游登记」。
+"""把用户给的那张「旅游登记」字样直接拿来做图标：只换颜色，不换字形。
 
-字形用微软雅黑粗体，再做一次形态学膨胀 + 轻微圆角化，
-笔画变粗、转角变圆，接近手写圆体的感觉；纯字体本身偏方。
+原图是白底黑字，渲染成 蓝底白字：
+  1. 取亮度反相 → 字变白、底变黑，直接当 alpha 通道
+  2. 二值化 + 放大到 1024，边缘保住锐度
+  3. 白色贴到蓝色画布上
 """
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 import os
 
+SRC = r"C:\Users\Kitsune\.dsh\attachments\v1\objects\ce\cef0781d315f7b837dc434d67fcae69007d3648e9a01662d45762f136c81c3c5"
 RES = r"D:\AIsoft\projects\tour-tool\app\src\main\res"
-FONT = r"C:\Windows\Fonts\msyhbd.ttc"
 BLUE = (31, 90, 166)      # #1F5AA6
 WHITE = (255, 255, 255)
 
-CHARS = "旅游登记"
-# 字心位置：桌面图标常被裁成圆形，可见半径是 0.5 画布宽，
-# 收到 0.325/0.675 之后即使在圆形遮罩里也不会切到笔画。
-CENTERS = [(0.325, 0.325), (0.675, 0.325), (0.325, 0.675), (0.675, 0.675)]
+src = Image.open(SRC).convert("L")
+print("source size:", src.size)
 
-# 在 1024 画布上：MaxFilter(13) 约等于膨胀 3 像素，模糊 2.4 再二值化得到圆角
-DILATE = 9
-ROUND = 1.8
-TEXT_RATIO_LEGACY = 0.215
-TEXT_RATIO_FG = TEXT_RATIO_LEGACY * 0.80   # 前景层放大，圆形遮罩下仍留有余量
+# 反相：黑字 → 白
+inv = Image.eval(src, lambda p: 255 - p)
+# 二值化，去掉放大时容易出现的灰边
+mask_small = inv.point(lambda p: 255 if p > 110 else 0)
 
+# 放到正方形画布中央，保持长宽比
+side = max(mask_small.size)
+square = Image.new("L", (side, side), 0)
+square.paste(
+    mask_small,
+    ((side - mask_small.width) // 2, (side - mask_small.height) // 2),
+)
 
-def draw_icon(size: int, bg, text_ratio: float) -> Image.Image:
-    """bg=None 表示透明底（自适应图标的前景层）。"""
-    mask = Image.new("L", (size, size), 0)
-    d = ImageDraw.Draw(mask)
-    font = ImageFont.truetype(FONT, int(size * text_ratio))
-    for ch, (rx, ry) in zip(CHARS, CENTERS):
-        d.text((size * rx, size * ry), ch, font=font, fill=255, anchor="mm")
+# 放大到 1024，再阈值化，避免模糊
+BIG = 1024
+mask_src = square.resize((BIG, BIG), Image.LANCZOS).point(lambda p: 255 if p > 110 else 0)
 
-    scale = size / 1024.0
-    k = int(DILATE * scale)
-    if k % 2 == 0:
-        k += 1
-    if k > 1:
-        mask = mask.filter(ImageFilter.MaxFilter(k))
-    mask = mask.filter(ImageFilter.GaussianBlur(max(0.5, ROUND * scale)))
-    mask = mask.point(lambda p: 255 if p > 120 else 0)
+# 原图的字笔画特别粗，占满整块画布；直接缩小到桌面图标大小，
+# 白色会连成一片、蓝色的缝隙反而像字，看起来就成"白底蓝字"了。
+# 所以整块字缩到画布的 80%，四周留出蓝边，缩到 48px 也仍能看出是蓝底。
+INNER = 0.80
+inner_side = int(BIG * INNER)
+inner = mask_src.resize((inner_side, inner_side), Image.LANCZOS)
+mask = Image.new("L", (BIG, BIG), 0)
+mask.paste(inner, ((BIG - inner_side) // 2, (BIG - inner_side) // 2))
 
-    img = Image.new("RGBA", (size, size), bg if bg else (0, 0, 0, 0))
-    white = Image.new("RGBA", (size, size), (255, 255, 255, 255))
-    img.paste(white, (0, 0), mask)
-    return img
+# 原图只有 133px，放大后边是台阶状；轻微模糊再二值化把台阶磨平
+mask = mask.filter(ImageFilter.GaussianBlur(3.0)).point(lambda p: 255 if p > 128 else 0)
+
+legacy = Image.new("RGBA", (BIG, BIG), BLUE)
+legacy.paste(Image.new("RGBA", (BIG, BIG), WHITE), (0, 0), mask)
+
+# 自适应图标前景：透明底白字，整块缩到安全区里
+fg_side = int(BIG * 0.80)
+fg_mask = mask.resize((fg_side, fg_side), Image.LANCZOS)
+fg_layer = Image.new("RGBA", (fg_side, fg_side), (0, 0, 0, 0))
+fg_layer.paste(Image.new("RGBA", (fg_side, fg_side), WHITE), (0, 0), fg_mask)
+foreground = Image.new("RGBA", (BIG, BIG), (0, 0, 0, 0))
+foreground.paste(fg_layer, ((BIG - fg_side) // 2, (BIG - fg_side) // 2))
 
 
 def save(img: Image.Image, folder: str, name: str, px: int):
@@ -61,16 +72,11 @@ DENSITIES = [
     ("mipmap-xxxhdpi", 192, 432),
 ]
 
-# 先在大画布上画，再逐级缩小，边缘才干净
-BIG_LEGACY = draw_icon(1024, BLUE, TEXT_RATIO_LEGACY)
-BIG_FG = draw_icon(1024, None, TEXT_RATIO_FG)
-
 for folder, legacy_px, fg_px in DENSITIES:
-    save(BIG_LEGACY, folder, "ic_launcher.png", legacy_px)
-    save(BIG_FG, folder, "ic_launcher_foreground.png", fg_px)
+    save(legacy, folder, "ic_launcher.png", legacy_px)
+    save(foreground, folder, "ic_launcher_foreground.png", fg_px)
 
-# 顺手留一张预览图
-BIG_LEGACY.resize((512, 512), Image.LANCZOS).save(
+legacy.resize((512, 512), Image.LANCZOS).save(
     r"D:\AIsoft\projects\tour-tool\dist\icon-preview-512.png", "PNG"
 )
 print("preview -> dist/icon-preview-512.png")
