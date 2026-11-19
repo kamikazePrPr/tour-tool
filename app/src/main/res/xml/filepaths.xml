@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 只暴露导出目录与更新包目录给 FileProvider -->
+<paths>
+    <cache-path name="export" path="export/" />
+    <cache-path name="update" path="update/" />
+    <files-path name="share" path="share/" />
+</paths>
