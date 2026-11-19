@@ -23,18 +23,22 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.launch
 import com.kamikazeprpr.tourtool.data.db.Team
 import com.kamikazeprpr.tourtool.ui.home.HomeViewModel
 import com.kamikazeprpr.tourtool.ui.team.TeamScreen
@@ -90,6 +94,8 @@ fun HomeScreen() {
         ) {
             Text("新建一个旅游团", fontSize = 22.sp)
         }
+
+        UpdateBanner()
 
         Spacer(Modifier.height(24.dp))
 
@@ -179,4 +185,75 @@ private fun NewTeamDialog(onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
             TextButton(onClick = onDismiss) { Text("取消", fontSize = 18.sp) }
         },
     )
+}
+
+/**
+ * 有新版本时在首页挂一条横幅。不弹窗——老人最怕弹窗，一弹就慌。
+ * 点了才下载；下载完过 sha256 / 包名 / 签名三道校验，再拉起系统安装界面。
+ */
+@Composable
+private fun UpdateBanner() {
+    val ctx = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var release by remember { mutableStateOf<com.kamikazeprpr.tourtool.update.UpdateChecker.Release?>(null) }
+    var busy by remember { mutableStateOf(false) }
+    var hint by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(Unit) {
+        com.kamikazeprpr.tourtool.data.AppLog.d("UPDATE", "开始检查版本")
+        when (val r = com.kamikazeprpr.tourtool.update.UpdateChecker.check()) {
+            is com.kamikazeprpr.tourtool.update.UpdateChecker.CheckResult.Newer -> release = r.release
+            is com.kamikazeprpr.tourtool.update.UpdateChecker.CheckResult.Failed ->
+                com.kamikazeprpr.tourtool.data.AppLog.d("UPDATE", "没查成：${r.reason}")
+            com.kamikazeprpr.tourtool.update.UpdateChecker.CheckResult.UpToDate -> Unit
+        }
+    }
+
+    val rel = release ?: return
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 12.dp),
+        shape = RoundedCornerShape(10.dp),
+        colors = CardDefaults.cardColors(containerColor = androidx.compose.ui.graphics.Color(0xFFEDF3FB)),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "有新版本 ${rel.version}",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = TextMain,
+                )
+                hint?.let {
+                    Text(it, fontSize = 14.sp, color = TextMuted)
+                }
+            }
+            Button(
+                onClick = {
+                    busy = true
+                    hint = null
+                    scope.launch {
+                        when (val r = com.kamikazeprpr.tourtool.update.UpdateChecker.download(ctx, rel)) {
+                            is com.kamikazeprpr.tourtool.update.UpdateChecker.InstallResult.Ready ->
+                                com.kamikazeprpr.tourtool.update.UpdateChecker.install(ctx, r.file)
+                            is com.kamikazeprpr.tourtool.update.UpdateChecker.InstallResult.Rejected ->
+                                hint = r.reason
+                        }
+                        busy = false
+                    }
+                },
+                enabled = !busy,
+                shape = RoundedCornerShape(10.dp),
+            ) {
+                Text(if (busy) "下载中…" else "更新", fontSize = 16.sp)
+            }
+        }
+    }
 }

@@ -10,6 +10,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.kamikazeprpr.tourtool.core.CardParser
 import com.kamikazeprpr.tourtool.core.IdCard
+import com.kamikazeprpr.tourtool.data.AppLog
 import com.kamikazeprpr.tourtool.data.TourRepository
 import com.kamikazeprpr.tourtool.data.db.Member
 import com.kamikazeprpr.tourtool.data.db.Team
@@ -94,16 +95,14 @@ class TeamViewModel(app: Application, private val teamId: Long) : AndroidViewMod
                 }
 
                 val merged = CardParser.merge(texts)
-                // 诊断：把三个通道的原始文本打出来，排查识别问题用（不含图片本身）
+                // 诊断日志：记通道文本但先脱敏，号码只留前 3 后 2
                 texts.forEachIndexed { i, t ->
-                    android.util.Log.d(
-                        "TourOCR",
-                        "ch$i => " + t.replace("\n", " ⏎ ").take(600)
-                    )
+                    AppLog.d("OCR", "ch$i => " + AppLog.maskAll(t.replace("\n", " ⏎ ").take(400)))
                 }
-                android.util.Log.d(
-                    "TourOCR",
-                    "merged: ok=${merged.autoOk} name=${merged.fields.name} num=${merged.fields.number} issues=${merged.issues}"
+                AppLog.i(
+                    "OCR",
+                    "结果 ok=${merged.autoOk} name=${if (merged.fields.name.isNullOrBlank()) "空" else "有"} " +
+                        "num=${merged.fields.number?.let { AppLog.maskId(it) } ?: "空"} issues=${merged.issues.size}"
                 )
                 val birth = merged.fields.birth?.takeIf { it.length == 8 }?.let {
                     "${it.substring(0, 4)}-${it.substring(4, 6)}-${it.substring(6, 8)}"

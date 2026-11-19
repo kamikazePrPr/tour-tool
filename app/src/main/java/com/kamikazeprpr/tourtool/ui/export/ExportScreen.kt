@@ -38,6 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
@@ -170,6 +171,8 @@ fun ExportScreen(
                 label = { it.label },
                 selected = { it == sortBy },
                 onClick = { sortBy = it },
+                perRow = 2,
+                chipWidth = 170.dp,
             )
             Spacer(Modifier.height(6.dp))
             OutlinedButton(
@@ -235,16 +238,18 @@ private fun <T> FlowChips(
     label: (T) -> String,
     selected: (T) -> Boolean,
     onClick: (T) -> Unit,
+    perRow: Int = 4,
+    chipWidth: Dp = 84.dp,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        items.chunked(4).forEach { row ->
+        items.chunked(perRow).forEach { row ->
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 row.forEach { item ->
                     val isOn = selected(item)
                     Column(
                         modifier = Modifier
                             .height(46.dp)
-                            .width(84.dp)
+                            .width(chipWidth)
                             .background(
                                 color = if (isOn) DeepIndigo else Color.White,
                                 shape = RoundedCornerShape(10.dp),
@@ -313,7 +318,7 @@ private fun TablePreview(header: List<String>, rows: List<List<String>>, textCol
                 row.forEachIndexed { i, cell ->
                     Text(
                         text = cell,
-                        modifier = Modifier.width(if (i in textColumns) 150.dp else 78.dp),
+                        modifier = Modifier.width(if (i in textColumns) 200.dp else 78.dp),
                         fontSize = 14.sp,
                         color = TextMain,
                     )
