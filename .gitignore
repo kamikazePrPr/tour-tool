@@ -1,0 +1,30 @@
+# Android / Gradle
+*.iml
+.gradle/
+build/
+captures/
+.externalNativeBuild/
+.cxx/
+local.properties
+.idea/
+
+# 签名与密钥 —— 永远不要提交
+*.keystore
+*.jks
+*.p12
+signing.properties
+release.properties
+
+# 构建产物
+*.apk
+*.aab
+*.ap_
+*.dex
+
+# 日志与临时
+*.log
+*.hprof
+
+# 系统
+.DS_Store
+Thumbs.db
