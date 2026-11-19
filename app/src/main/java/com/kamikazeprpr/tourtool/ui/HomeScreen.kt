@@ -5,7 +5,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,10 +20,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -218,11 +224,11 @@ private fun EditTeamDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("编辑这个团", fontSize = 22.sp) },
+        title = { Text("编辑这个团", fontSize = 22.sp, fontWeight = FontWeight.SemiBold) },
         text = {
             Column(
                 modifier = Modifier
-                    .heightIn(max = 420.dp)
+                    .heightIn(max = 460.dp)
                     .verticalScroll(rememberScrollState()),
             ) {
                 OutlinedTextField(
@@ -233,11 +239,11 @@ private fun EditTeamDialog(
                     textStyle = MaterialTheme.typography.bodyLarge.copy(fontSize = 18.sp),
                     modifier = Modifier.fillMaxWidth(),
                 )
-                Spacer(Modifier.height(10.dp))
-                DateRow("出发日期", depart) { pickWhich = 0 }
-                Spacer(Modifier.height(8.dp))
-                DateRow("结束日期", end) { pickWhich = 1 }
-                Spacer(Modifier.height(10.dp))
+                Spacer(Modifier.height(12.dp))
+                DateField("出发日期", depart) { pickWhich = 0 }
+                Spacer(Modifier.height(12.dp))
+                DateField("结束日期", end) { pickWhich = 1 }
+                Spacer(Modifier.height(12.dp))
                 OutlinedTextField(
                     value = note,
                     onValueChange = { note = it },
@@ -246,23 +252,33 @@ private fun EditTeamDialog(
                     textStyle = MaterialTheme.typography.bodyLarge.copy(fontSize = 18.sp),
                     modifier = Modifier.fillMaxWidth(),
                 )
-                Spacer(Modifier.height(14.dp))
-                TextButton(onClick = { confirmDelete = true }) {
+
+                Spacer(Modifier.height(18.dp))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                Spacer(Modifier.height(4.dp))
+                TextButton(
+                    onClick = { confirmDelete = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
+                ) {
                     Text(
                         "删除这个团",
-                        fontSize = 17.sp,
+                        fontSize = 16.sp,
                         color = com.kamikazeprpr.tourtool.ui.theme.StateBad,
+                        modifier = Modifier.fillMaxWidth(),
                     )
                 }
             }
         },
         confirmButton = {
             TextButton(onClick = { onSave(name, depart, end, note.ifBlank { null }) }) {
-                Text("保存", fontSize = 18.sp)
+                Text("保存", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("取消", fontSize = 18.sp) }
+            TextButton(onClick = onDismiss) {
+                Text("取消", fontSize = 18.sp, color = TextMuted)
+            }
         },
     )
 
@@ -336,21 +352,55 @@ private fun EditTeamDialog(
     }
 }
 
+/**
+ * 日期字段：外观跟上下两个输入框一致，但整块可点，点了弹系统日期选择器。
+ * 用 enabled=false 让它不抢点击，颜色再单独调回来，不然会灰得像不可用。
+ */
 @Composable
-private fun DateRow(label: String, value: String?, onClick: () -> Unit) {
-    Row(
+private fun DateField(label: String, value: String?, onClick: () -> Unit) {
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
+            .clickable(onClick = onClick),
     ) {
-        Text(label, fontSize = 16.sp, color = TextMuted, modifier = Modifier.width(90.dp))
-        Text(
-            text = value ?: "点这里选日期",
-            fontSize = 18.sp,
-            color = if (value == null) TextMuted else TextMain,
+        OutlinedTextField(
+            // 空值塞一个空格：这样 label 会浮到边框上，跟有值的那个框对齐，
+            // 不然一个浮起一个留在框里，看着不齐。
+            value = prettyDate(value).ifEmpty { " " },
+            onValueChange = {},
+            enabled = false,
+            readOnly = true,
+            singleLine = true,
+            label = { Text(label, fontSize = 15.sp) },
+            placeholder = { Text("点这里选日期", fontSize = 17.sp) },
+            trailingIcon = {
+                Icon(
+                    imageVector = Icons.Default.DateRange,
+                    contentDescription = "选日期",
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+            },
+            textStyle = MaterialTheme.typography.bodyLarge.copy(fontSize = 18.sp),
+            modifier = Modifier.fillMaxWidth(),
+            colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                disabledTextColor = TextMain,
+                disabledBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                disabledLabelColor = TextMuted,
+                disabledPlaceholderColor = TextMuted,
+                disabledTrailingIconColor = MaterialTheme.colorScheme.primary,
+            ),
         )
+    }
+}
+
+/** 存的是 2026-11-19，给人看的时候写成 2026年11月19日 */
+private fun prettyDate(raw: String?): String {
+    if (raw.isNullOrBlank()) return ""
+    return try {
+        val d = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.CHINA).parse(raw)
+        java.text.SimpleDateFormat("yyyy年M月d日", java.util.Locale.CHINA).format(d!!)
+    } catch (_: Exception) {
+        raw
     }
 }
 
