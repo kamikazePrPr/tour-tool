@@ -31,8 +31,13 @@ import com.kamikazeprpr.tourtool.ui.theme.TextMain
 import com.kamikazeprpr.tourtool.ui.theme.TextMuted
 
 /**
- * 安装后第一次打开：联网范围 + 信息安全说明。
- * 只在第一次出现；点「不使用，退出」不会创建任何数据。
+ * 安装后第一次打开：隐私与数据使用声明。
+ *
+ * 正文由 Codex 依据《个人信息保护法》《网络安全法》《数据安全法》
+ * 和 GB/T 35273-2020 起草，覆盖处理目的、敏感个人信息单独说明、
+ * 处理方式、对外提供情况、保存与删除、个人权利六项要素。
+ *
+ * 只在第一次出现，点「我已知晓，继续使用，之后不再提示」之后永不再显示。
  */
 @Composable
 fun FirstRunScreen(
@@ -47,43 +52,48 @@ fun FirstRunScreen(
             .systemBarsPadding()
             .background(MaterialTheme.colorScheme.background)
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 24.dp, vertical = 28.dp),
+            .padding(horizontal = 24.dp, vertical = 24.dp),
         verticalArrangement = Arrangement.Top,
     ) {
         Text(
             text = "使用前，请先看一下",
-            fontSize = 26.sp,
+            fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
             color = TextMain,
         )
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(18.dp))
 
-        Section(
-            title = "这个软件会联网做两件事",
-            body = "看 GitHub 上有没有新版本，有就下载新版本。除了这两件事，它不连任何别的地方。",
+        Paragraph(
+            "为游客办理登记、统一购买旅游保险，并在出行时核对身份，需要收集姓名、身份证号、" +
+                "出生日期等信息。身份证号和出生日期属于敏感个人信息，只在办理登记和投保时使用，不做其他用途。"
         )
-        Section(
-            title = "客人的信息只在你这台手机里",
-            body = "姓名、身份证号、照片，全部只存在这台手机上面。软件不上传、不备份到网上、不发给任何人，也没有任何统计和广告。",
+        Paragraph(
+            "相册中的照片只供读取，不修改、不删除、不上传，识别在本机离线完成。" +
+                "资料只存放在本机私有目录，不上传、不做云备份、不共享，也没有广告和统计。"
         )
-        Section(
-            title = "相册里的照片不会被改动",
-            body = "你选的身份证照片，软件只是看一眼，不修改、不删除、不移动。用完它还在原来的地方。",
+        Paragraph(
+            "应用只联网访问 GitHub 查询新版本，不会通过联网发送游客资料。" +
+                "日志不含姓名和完整号码，保存 7 天后自动删除。"
+        )
+        Paragraph(
+            "您可以要求查阅、更正、删除资料，也可以随时删除某个团或全部数据，删除后无法恢复。" +
+                "已经发出去的 Excel 表格，例如发给旅行社同事的表格，不受本机数据删除的影响，" +
+                "请另行联系收件人处理对方收到的表格。"
         )
 
-        Spacer(Modifier.height(32.dp))
+        Spacer(Modifier.height(26.dp))
 
         Button(
             onClick = onAgree,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(56.dp),
+                .height(60.dp),
             shape = RoundedCornerShape(12.dp),
         ) {
-            Text("我已知晓，继续使用", fontSize = 20.sp)
+            Text("我已知晓，继续使用，之后不再提示", fontSize = 17.sp)
         }
 
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(10.dp))
 
         OutlinedButton(
             onClick = { showExitConfirm = true },
@@ -95,7 +105,7 @@ fun FirstRunScreen(
             Text("不使用，退出", fontSize = 18.sp)
         }
 
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(16.dp))
 
         Text(
             text = "这份说明随时可以在「设置 → 关于」里再看一遍。",
@@ -120,19 +130,12 @@ fun FirstRunScreen(
 }
 
 @Composable
-private fun Section(title: String, body: String) {
+private fun Paragraph(text: String) {
     Text(
-        text = title,
-        fontSize = 20.sp,
-        fontWeight = FontWeight.SemiBold,
+        text = text,
+        fontSize = 17.sp,
+        lineHeight = 27.sp,
         color = TextMain,
     )
-    Spacer(Modifier.height(6.dp))
-    Text(
-        text = body,
-        fontSize = 18.sp,
-        lineHeight = 28.sp,
-        color = TextMuted,
-    )
-    Spacer(Modifier.height(22.dp))
+    Spacer(Modifier.height(16.dp))
 }

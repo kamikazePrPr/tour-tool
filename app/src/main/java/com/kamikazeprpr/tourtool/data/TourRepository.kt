@@ -29,4 +29,32 @@ class TourRepository(private val db: TourDatabase) {
         db.teamDao().observeCountByStatus(teamId, Member.STATUS_NEED_REVIEW)
 
     fun members(teamId: Long): Flow<List<Member>> = db.memberDao().observeByTeam(teamId)
+
+    suspend fun addMember(
+        teamId: Long,
+        name: String,
+        gender: String,
+        idNumber: String,
+        birthDate: String?,
+        status: String,
+        failReasons: String?,
+        sourceUri: String?,
+        uriPermissionHeld: Boolean,
+    ): Long {
+        val seq = db.memberDao().countByTeam(teamId) + 1
+        return db.memberDao().insert(
+            Member(
+                teamId = teamId,
+                seq = seq,
+                name = name,
+                gender = gender,
+                idNumber = idNumber,
+                birthDate = birthDate,
+                status = status,
+                failReasons = failReasons,
+                sourceUri = sourceUri,
+                uriPermissionHeld = uriPermissionHeld,
+            )
+        )
+    }
 }

@@ -79,5 +79,10 @@ dependencies {    implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
 
+    // 打包版中文 OCR：模型在 APK 内，不需要 Google 服务，首跑不联网
+    implementation(libs.mlkit.text.chinese)
+
+    testImplementation(libs.junit)
+
     debugImplementation(libs.androidx.compose.ui.tooling.preview)
 }
