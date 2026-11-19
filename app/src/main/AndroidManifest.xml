@@ -3,6 +3,8 @@
 
     <!-- 联网只为两件事：查 GitHub 新版本、下载新版本。域名在 network_security_config 里锁死。 -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- 自动更新要用：不加这条，系统安装器会直接拒绝拉起安装界面 -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
     <application
         android:name=".TourApp"

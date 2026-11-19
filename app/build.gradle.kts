@@ -1,4 +1,4 @@
-import java.util.Properties
+﻿import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
@@ -15,15 +15,15 @@ android {
         applicationId = "com.kamikazeprpr.tourtool"
         minSdk = 24
         targetSdk = 35
-        versionCode = 4
-        versionName = "0.4.0"
+        versionCode = 6
+        versionName = "0.4.2"
         resourceConfigurations += listOf("zh")
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
-            // 签名配置在本地 signing.properties 里，不进仓库
+            // 绛惧悕閰嶇疆鍦ㄦ湰鍦?signing.properties 閲岋紝涓嶈繘浠撳簱
             val propsFile = rootProject.file("signing.properties")
             if (propsFile.exists()) {
                 val props = Properties()
@@ -59,8 +59,7 @@ android {
 }
 
 ksp {
-    // Room 的 schema 导出到 app/schemas，改表结构时能在 diff 里看见
-    arg("room.schemaLocation", "$projectDir/schemas")
+    // Room 鐨?schema 瀵煎嚭鍒?app/schemas锛屾敼琛ㄧ粨鏋勬椂鑳藉湪 diff 閲岀湅瑙?    arg("room.schemaLocation", "$projectDir/schemas")
 }
 
 dependencies {    implementation(libs.androidx.core.ktx)
@@ -79,10 +78,11 @@ dependencies {    implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
 
-    // 打包版中文 OCR：模型在 APK 内，不需要 Google 服务，首跑不联网
+    // 鎵撳寘鐗堜腑鏂?OCR锛氭ā鍨嬪湪 APK 鍐咃紝涓嶉渶瑕?Google 鏈嶅姟锛岄璺戜笉鑱旂綉
     implementation(libs.mlkit.text.chinese)
 
     testImplementation(libs.junit)
 
     debugImplementation(libs.androidx.compose.ui.tooling.preview)
 }
+
