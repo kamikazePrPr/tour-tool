@@ -46,7 +46,7 @@ certutil -hashfile app-release.apk SHA256
 gh release create v1.0.1 app-release.apk app-release.apk.sha256 --notes "更新说明"
 ```
 
-App 端会读取 `<owner>/tour-id-register` 的最新 Release，下载后校验 SHA-256、包名、签名证书摘要，三道全过才拉起系统安装。
+App 端会读取 `kamikazePrPr/tour-tool` 的最新 Release，下载后校验 SHA-256、包名、签名证书摘要，三道全过才拉起系统安装。
 
 ## 注意
 
