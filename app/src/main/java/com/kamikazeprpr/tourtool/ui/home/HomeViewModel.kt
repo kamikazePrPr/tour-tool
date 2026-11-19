@@ -33,6 +33,19 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
 
     fun memberCount(teamId: Long) = repo.memberCount(teamId)
 
+    fun saveTeam(team: Team, name: String, depart: String?, end: String?, note: String?) {
+        viewModelScope.launch {
+            repo.updateTeam(
+                team.copy(
+                    name = name.trim().ifBlank { team.name },
+                    departDate = depart,
+                    endDate = end,
+                    note = note,
+                )
+            )
+        }
+    }
+
     fun consumeNewTeam() {
         _newTeamId.value = null
     }

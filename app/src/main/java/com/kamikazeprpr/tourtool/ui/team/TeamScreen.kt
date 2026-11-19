@@ -6,6 +6,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -22,6 +23,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -34,6 +37,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -68,6 +72,8 @@ fun TeamScreen(teamId: Long, onBack: () -> Unit) {
 
     var editingMemberId by rememberSaveable { mutableStateOf<Long?>(null) }
     var showExport by rememberSaveable { mutableStateOf(false) }
+    var editMode by rememberSaveable { mutableStateOf(false) }
+    var deleteTarget by remember { mutableStateOf<Member?>(null) }
 
     val tagsByMember by produceState(
         initialValue = emptyMap<Long, List<String>>(),
@@ -109,21 +115,36 @@ fun TeamScreen(teamId: Long, onBack: () -> Unit) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable(onClick = onBack)
                 .padding(vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = "返回",
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(26.dp),
-            )
-            Spacer(Modifier.width(6.dp))
+            Row(
+                modifier = Modifier
+                    .clickable(onClick = onBack)
+                    .padding(end = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "返回",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(26.dp),
+                )
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    text = "返回",
+                    fontSize = 20.sp,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
+            Spacer(Modifier.weight(1f))
             Text(
-                text = "返回",
-                fontSize = 20.sp,
+                text = if (editMode) "完成" else "编辑",
+                fontSize = 18.sp,
                 color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier
+                    .clickable { editMode = !editMode }
+                    .padding(horizontal = 10.dp, vertical = 6.dp),
             )
         }
 
@@ -209,7 +230,12 @@ fun TeamScreen(teamId: Long, onBack: () -> Unit) {
             )
         } else {
             members.forEach { m ->
-                MemberRow(m, onClick = { editingMemberId = m.id })
+                MemberRow(
+                    m = m,
+                    editMode = editMode,
+                    onClick = { if (!editMode) editingMemberId = m.id },
+                    onDelete = { deleteTarget = m },
+                )
                 Spacer(Modifier.height(10.dp))
             }
 
@@ -226,10 +252,37 @@ fun TeamScreen(teamId: Long, onBack: () -> Unit) {
             Spacer(Modifier.height(16.dp))
         }
     }
+
+    deleteTarget?.let { target ->
+        AlertDialog(
+            onDismissRequest = { deleteTarget = null },
+            title = { Text("确认删除？", fontSize = 22.sp) },
+            text = {
+                Text(
+                    "删掉之后「${target.name.ifBlank { "这一条" }}」不会出现在名单和表格里。",
+                    fontSize = 17.sp,
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    vm.deleteMember(target)
+                    deleteTarget = null
+                }) { Text("确认", fontSize = 18.sp, color = StateBad) }
+            },
+            dismissButton = {
+                TextButton(onClick = { deleteTarget = null }) { Text("取消", fontSize = 18.sp) }
+            },
+        )
+    }
 }
 
 @Composable
-private fun MemberRow(m: Member, onClick: () -> Unit) {
+private fun MemberRow(
+    m: Member,
+    editMode: Boolean,
+    onClick: () -> Unit,
+    onDelete: () -> Unit,
+) {
     val ok = m.status == Member.STATUS_AUTO_OK || m.status == Member.STATUS_MANUAL_OK
     val reading = m.failReasons.orEmpty().split("；").filter { it.isNotBlank() }
 
@@ -286,7 +339,22 @@ private fun MemberRow(m: Member, onClick: () -> Unit) {
                     )
                 }
             }
-            if (ok) {
+            if (editMode) {
+                // 编辑模式下右侧换成红叉，点它先问一句再删
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clickable(onClick = onDelete),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "删除这一条",
+                        tint = StateBad,
+                        modifier = Modifier.size(26.dp),
+                    )
+                }
+            } else if (ok) {
                 Icon(
                     imageVector = Icons.Default.Check,
                     contentDescription = "已经核对通过",

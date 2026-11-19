@@ -14,6 +14,8 @@ data class Team(
     val name: String,
     val teamCode: String? = null,
     val departDate: String? = null,
+    /** 行程结束日期，yyyy-MM-dd */
+    val endDate: String? = null,
     val note: String? = null,
     val createdAt: Long = System.currentTimeMillis(),
 )

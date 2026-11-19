@@ -291,6 +291,8 @@ private fun FormatChip(text: String, selected: Boolean, onClick: () -> Unit) {
 
 @Composable
 private fun TablePreview(header: List<String>, rows: List<List<String>>, textColumns: Set<Int>) {
+    // 表头和数据必须用同一套列宽，否则两边错位（之前表头写死 150、数据写死 200，就对不上了）
+    fun widthOf(i: Int) = if (i in textColumns) 200.dp else 78.dp
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -302,7 +304,7 @@ private fun TablePreview(header: List<String>, rows: List<List<String>>, textCol
             header.forEachIndexed { i, h ->
                 Text(
                     text = h,
-                    modifier = Modifier.width(if (i in textColumns) 150.dp else 78.dp),
+                    modifier = Modifier.width(widthOf(i)),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = TextMain,
@@ -318,7 +320,7 @@ private fun TablePreview(header: List<String>, rows: List<List<String>>, textCol
                 row.forEachIndexed { i, cell ->
                     Text(
                         text = cell,
-                        modifier = Modifier.width(if (i in textColumns) 200.dp else 78.dp),
+                        modifier = Modifier.width(widthOf(i)),
                         fontSize = 14.sp,
                         color = TextMain,
                     )

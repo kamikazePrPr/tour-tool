@@ -20,6 +20,8 @@ class TourRepository(private val db: TourDatabase) {
     suspend fun renameTeam(team: Team, newName: String) =
         db.teamDao().update(team.copy(name = newName.trim()))
 
+    suspend fun updateTeam(team: Team) = db.teamDao().update(team)
+
     suspend fun deleteTeam(team: Team) = db.teamDao().delete(team)
 
     fun memberCount(teamId: Long): Flow<Int> = db.teamDao().observeMemberCount(teamId)

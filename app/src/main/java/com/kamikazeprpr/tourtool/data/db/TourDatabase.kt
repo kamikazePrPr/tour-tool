@@ -4,11 +4,12 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     entities = [Team::class, Member::class, Tag::class, MemberTag::class],
-    version = 1,
+    version = 2,
     exportSchema = true,
 )
 abstract class TourDatabase : RoomDatabase() {
@@ -18,6 +19,13 @@ abstract class TourDatabase : RoomDatabase() {
 
     companion object {
         private const val NAME = "tour.db"
+
+        /** v1 → v2：团里加了「结束日期」，老用户升级不能丢数据 */
+        private val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE team ADD COLUMN endDate TEXT")
+            }
+        }
 
         @Volatile
         private var instance: TourDatabase? = null
@@ -29,6 +37,7 @@ abstract class TourDatabase : RoomDatabase() {
                     TourDatabase::class.java,
                     NAME,
                 )
+                    .addMigrations(MIGRATION_1_2)
                     .addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
                             super.onCreate(db)
