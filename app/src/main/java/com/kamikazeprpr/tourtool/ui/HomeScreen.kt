@@ -176,7 +176,7 @@ private fun NewTeamDialog(onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("算了", fontSize = 18.sp) }
+            TextButton(onClick = onDismiss) { Text("取消", fontSize = 18.sp) }
         },
     )
 }
