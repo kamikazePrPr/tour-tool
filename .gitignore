@@ -1,4 +1,4 @@
-# Android / Gradle
+﻿# Android / Gradle
 *.iml
 .gradle/
 build/
@@ -8,23 +8,24 @@ captures/
 local.properties
 .idea/
 
-# 签名与密钥 —— 永远不要提交
+# 绛惧悕涓庡瘑閽?鈥斺€?姘歌繙涓嶈鎻愪氦
 *.keystore
 *.jks
 *.p12
 signing.properties
 release.properties
 
-# 构建产物
+# 鏋勫缓浜х墿
 *.apk
 *.aab
 *.ap_
 *.dex
 
-# 日志与临时
-*.log
+# 鏃ュ織涓庝复鏃?*.log
 *.hprof
 
-# 系统
+# 绯荤粺
 .DS_Store
 Thumbs.db
+
+dist/

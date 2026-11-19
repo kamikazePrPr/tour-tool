@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -38,6 +40,7 @@ fun TeamScreen(teamId: Long, onBack: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .systemBarsPadding()
             .background(MaterialTheme.colorScheme.background)
             .padding(horizontal = 20.dp, vertical = 20.dp),
         verticalArrangement = Arrangement.Top,
@@ -66,6 +69,7 @@ fun TeamScreen(teamId: Long, onBack: () -> Unit) {
             modifier = Modifier
                 .fillMaxWidth()
                 .height(64.dp),
+            shape = RoundedCornerShape(12.dp),
         ) {
             Text("选客人的身份证照片", fontSize = 21.sp)
         }

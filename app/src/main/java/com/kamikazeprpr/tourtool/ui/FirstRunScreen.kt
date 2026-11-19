@@ -8,7 +8,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -42,6 +44,7 @@ fun FirstRunScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .systemBarsPadding()
             .background(MaterialTheme.colorScheme.background)
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 24.dp, vertical = 28.dp),
@@ -75,6 +78,7 @@ fun FirstRunScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp),
+            shape = RoundedCornerShape(12.dp),
         ) {
             Text("我已知晓，继续使用", fontSize = 20.sp)
         }
@@ -86,6 +90,7 @@ fun FirstRunScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp),
+            shape = RoundedCornerShape(12.dp),
         ) {
             Text("不使用，退出", fontSize = 18.sp)
         }
