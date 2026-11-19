@@ -10,6 +10,7 @@ import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,12 +19,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -67,17 +72,15 @@ import kotlinx.coroutines.withContext
 fun MemberEditScreen(
     member: Member,
     onSave: (name: String, gender: String, idNumber: String) -> Unit,
-    onDelete: () -> Unit,
     onBack: () -> Unit,
 ) {
     val ctx = LocalContext.current
     var name by remember { mutableStateOf(member.name) }
     var gender by remember { mutableStateOf(member.gender) }
     var idNumber by remember { mutableStateOf(member.idNumber) }
-    // 打开就放大一点，让卡面上的字看得清；不会捏合的人用右下角的正负按钮
+    // 打开就放大一点，让卡面上的字看得清；不会捏合的人用右上角的正负按钮
     var scale by remember { mutableFloatStateOf(1.7f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
-    var confirmDelete by remember { mutableStateOf(false) }
 
     // 原图：按需采样解码，绝不整张读进内存
     val bitmap by produceState<Bitmap?>(initialValue = null, member.sourceUri) {
@@ -107,10 +110,22 @@ fun MemberEditScreen(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 4.dp),
+                .clickable(onClick = onBack)
+                .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            TextButton(onClick = onBack) { Text("‹ 返回", fontSize = 20.sp) }
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = "返回",
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(26.dp),
+            )
+            Spacer(Modifier.width(6.dp))
+            Text(
+                text = "返回",
+                fontSize = 20.sp,
+                color = MaterialTheme.colorScheme.primary,
+            )
             Spacer(Modifier.weight(1f))
             Text(
                 text = "第 ${member.seq} 个",
@@ -247,38 +262,21 @@ fun MemberEditScreen(
                     .height(58.dp),
                 shape = RoundedCornerShape(12.dp),
             ) {
-                Text("好了，就这样", fontSize = 19.sp)
+                Text("确认", fontSize = 20.sp)
             }
 
             Spacer(Modifier.height(10.dp))
 
             OutlinedButton(
-                onClick = { confirmDelete = true },
+                onClick = onBack,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp),
                 shape = RoundedCornerShape(12.dp),
             ) {
-                Text("这个人不登记了", fontSize = 17.sp)
+                Text("取消", fontSize = 18.sp)
             }
         }
-    }
-
-    if (confirmDelete) {
-        AlertDialog(
-            onDismissRequest = { confirmDelete = false },
-            title = { Text("把这个人去掉？", fontSize = 22.sp) },
-            text = { Text("去掉之后，这个人不会出现在表格里。", fontSize = 17.sp) },
-            confirmButton = {
-                TextButton(onClick = {
-                    confirmDelete = false
-                    onDelete()
-                }) { Text("去掉", fontSize = 18.sp) }
-            },
-            dismissButton = {
-                TextButton(onClick = { confirmDelete = false }) { Text("留着", fontSize = 18.sp) }
-            },
-        )
     }
 }
 
@@ -298,21 +296,26 @@ private fun ZoomButton(label: String, onClick: () -> Unit) {
 
 @Composable
 private fun GenderButton(label: String, selected: Boolean, onClick: () -> Unit) {
+    // 两个按钮固定同一个宽度和内容内边距，选中与否只差底色，
+    // 不然 Button 和 OutlinedButton 的默认内容内边距不一样，两个框会一宽一窄。
+    val sizeModifier = Modifier
+        .width(118.dp)
+        .height(52.dp)
+    val noPadding = PaddingValues(0.dp)
+    val shape = RoundedCornerShape(10.dp)
     if (selected) {
         Button(
             onClick = onClick,
-            modifier = Modifier
-                .height(52.dp)
-                .fillMaxWidth(0.32f),
-            shape = RoundedCornerShape(10.dp),
+            modifier = sizeModifier,
+            shape = shape,
+            contentPadding = noPadding,
         ) { Text(label, fontSize = 19.sp) }
     } else {
         OutlinedButton(
             onClick = onClick,
-            modifier = Modifier
-                .height(52.dp)
-                .fillMaxWidth(0.32f),
-            shape = RoundedCornerShape(10.dp),
+            modifier = sizeModifier,
+            shape = shape,
+            contentPadding = noPadding,
         ) { Text(label, fontSize = 19.sp, color = TextMain) }
     }
 }

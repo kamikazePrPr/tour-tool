@@ -4,6 +4,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,10 +15,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -71,10 +74,6 @@ fun TeamScreen(teamId: Long, onBack: () -> Unit) {
                 vm.saveManual(editing, n, g, num)
                 editingMemberId = null
             },
-            onDelete = {
-                vm.deleteMember(editing)
-                editingMemberId = null
-            },
             onBack = { editingMemberId = null },
         )
         return
@@ -89,9 +88,25 @@ fun TeamScreen(teamId: Long, onBack: () -> Unit) {
             .padding(horizontal = 20.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.Top,
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            TextButton(onClick = onBack) { Text("‹ 返回", fontSize = 20.sp) }
-            Spacer(Modifier.weight(1f))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onBack)
+                .padding(vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = "返回",
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(26.dp),
+            )
+            Spacer(Modifier.width(6.dp))
+            Text(
+                text = "返回",
+                fontSize = 20.sp,
+                color = MaterialTheme.colorScheme.primary,
+            )
         }
 
         Text(
