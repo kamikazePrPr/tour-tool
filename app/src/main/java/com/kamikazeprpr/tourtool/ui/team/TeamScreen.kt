@@ -25,6 +25,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -52,6 +55,24 @@ fun TeamScreen(teamId: Long, onBack: () -> Unit) {
         ActivityResultContracts.PickMultipleVisualMedia(100)
     ) { uris ->
         if (uris.isNotEmpty()) vm.importImages(uris)
+    }
+
+    var editingMemberId by rememberSaveable { mutableStateOf<Long?>(null) }
+    val editing = members.firstOrNull { it.id == editingMemberId }
+    if (editing != null) {
+        com.kamikazeprpr.tourtool.ui.member.MemberEditScreen(
+            member = editing,
+            onSave = { n, g, num ->
+                vm.saveManual(editing, n, g, num)
+                editingMemberId = null
+            },
+            onDelete = {
+                vm.deleteMember(editing)
+                editingMemberId = null
+            },
+            onBack = { editingMemberId = null },
+        )
+        return
     }
 
     Column(
@@ -150,7 +171,7 @@ fun TeamScreen(teamId: Long, onBack: () -> Unit) {
             )
         } else {
             members.forEach { m ->
-                MemberRow(m)
+                MemberRow(m, onClick = { editingMemberId = m.id })
                 Spacer(Modifier.height(10.dp))
             }
         }
@@ -158,9 +179,10 @@ fun TeamScreen(teamId: Long, onBack: () -> Unit) {
 }
 
 @Composable
-private fun MemberRow(m: Member) {
+private fun MemberRow(m: Member, onClick: () -> Unit) {
     val ok = m.status == Member.STATUS_AUTO_OK || m.status == Member.STATUS_MANUAL_OK
     Card(
+        onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),

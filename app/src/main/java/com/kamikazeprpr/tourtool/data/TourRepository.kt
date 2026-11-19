@@ -30,8 +30,11 @@ class TourRepository(private val db: TourDatabase) {
 
     fun members(teamId: Long): Flow<List<Member>> = db.memberDao().observeByTeam(teamId)
 
-    suspend fun addMember(
-        teamId: Long,
+    suspend fun updateMember(member: Member) = db.memberDao().update(member)
+
+    suspend fun deleteMember(member: Member) = db.memberDao().delete(member)
+
+    suspend fun addMember(        teamId: Long,
         name: String,
         gender: String,
         idNumber: String,

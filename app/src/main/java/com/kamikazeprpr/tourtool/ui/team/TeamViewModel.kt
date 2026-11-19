@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.kamikazeprpr.tourtool.core.CardParser
+import com.kamikazeprpr.tourtool.core.IdCard
 import com.kamikazeprpr.tourtool.data.TourRepository
 import com.kamikazeprpr.tourtool.data.db.Member
 import com.kamikazeprpr.tourtool.data.db.Team
@@ -133,6 +134,35 @@ class TeamViewModel(app: Application, private val teamId: Long) : AndroidViewMod
                 if (failed > 0) append("，$failed 张读不出来")
             }
         }
+    }
+
+    /** 人工改完保存：号码校验通过就是「人工确认过了」，否则仍然挂着「要你看一眼」 */
+    fun saveManual(
+        member: Member,
+        name: String,
+        gender: String,
+        idNumber: String,
+    ) {
+        viewModelScope.launch {
+            val cleanNumber = IdCard.normalizeNumber(idNumber)
+            val birth = IdCard.birthFromNumber(cleanNumber)
+            val issues = IdCard.validate(cleanNumber)
+            repo.updateMember(
+                member.copy(
+                    name = name.trim(),
+                    gender = gender,
+                    idNumber = cleanNumber,
+                    birthDate = birth,
+                    status = if (issues.isEmpty()) Member.STATUS_MANUAL_OK else Member.STATUS_NEED_REVIEW,
+                    failReasons = issues.takeIf { it.isNotEmpty() }?.joinToString("；"),
+                    updatedAt = System.currentTimeMillis(),
+                )
+            )
+        }
+    }
+
+    fun deleteMember(member: Member) {
+        viewModelScope.launch { repo.deleteMember(member) }
     }
 
     companion object {
