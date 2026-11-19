@@ -1,6 +1,9 @@
 package com.kamikazeprpr.tourtool.data
 
 import com.kamikazeprpr.tourtool.data.db.Member
+import com.kamikazeprpr.tourtool.data.db.MemberTag
+import com.kamikazeprpr.tourtool.data.db.MemberTagFull
+import com.kamikazeprpr.tourtool.data.db.Tag
 import com.kamikazeprpr.tourtool.data.db.Team
 import com.kamikazeprpr.tourtool.data.db.TourDatabase
 import kotlinx.coroutines.flow.Flow
@@ -35,6 +38,18 @@ class TourRepository(private val db: TourDatabase) {
     /** 一次把这个团所有人的标签捞出来：成员 id → 标签名列表 */
     suspend fun tagsOfTeam(teamId: Long): Map<Long, List<String>> =
         db.tagDao().tagsOfTeam(teamId).groupBy({ it.memberId }, { it.label })
+
+    /** 列表页显示彩色标签用，带颜色下标 */
+    suspend fun tagsByMember(teamId: Long): Map<Long, List<MemberTagFull>> =
+        db.tagDao().tagsOfTeamFull(teamId).groupBy { it.memberId }
+
+    suspend fun allTags(): List<Tag> = db.tagDao().getAll()
+
+    /** 整个成员标签集合一次替换：先清空再按勾选写入 */
+    suspend fun setMemberTags(memberId: Long, tagIds: List<Long>) {
+        db.tagDao().unlinkAll(memberId)
+        tagIds.forEach { db.tagDao().link(MemberTag(memberId, it)) }
+    }
 
     suspend fun updateMember(member: Member) = db.memberDao().update(member)
 

@@ -167,6 +167,16 @@ class TeamViewModel(app: Application, private val teamId: Long) : AndroidViewMod
     /** 导出页要用：一次拿全团标签 */
     suspend fun tagsForExport(): Map<Long, List<String>> = repo.tagsOfTeam(teamId)
 
+    /** 列表页用：带颜色下标 */
+    suspend fun tagsByMember(): Map<Long, List<com.kamikazeprpr.tourtool.data.db.MemberTagFull>> =
+        repo.tagsByMember(teamId)
+
+    suspend fun allTags(): List<com.kamikazeprpr.tourtool.data.db.Tag> = repo.allTags()
+
+    fun saveMemberTags(memberId: Long, tagIds: List<Long>) {
+        viewModelScope.launch { repo.setMemberTags(memberId, tagIds) }
+    }
+
     companion object {
         // 解码上限要高于识别尺寸，否则等于先毁掉细节再放大
         private const val DECODE_MAX_SIDE = 3200

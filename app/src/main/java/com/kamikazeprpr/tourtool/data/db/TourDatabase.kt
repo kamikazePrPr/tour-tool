@@ -9,7 +9,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     entities = [Team::class, Member::class, Tag::class, MemberTag::class],
-    version = 2,
+    version = 4,
     exportSchema = true,
 )
 abstract class TourDatabase : RoomDatabase() {
@@ -27,6 +27,32 @@ abstract class TourDatabase : RoomDatabase() {
             }
         }
 
+        /** v3 → v4：让每个标签拿到互不重复的颜色下标（本来是 6 个来回用，10 个标签就撞色了） */
+        private val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """UPDATE tag SET colorIndex = (
+                           SELECT COUNT(*) FROM tag t2
+                           WHERE t2.sortOrder < tag.sortOrder
+                              OR (t2.sortOrder = tag.sortOrder AND t2.id < tag.id)
+                       )"""
+                )
+            }
+        }
+
+        /** v2 → v3：预置几种常用的出行标签，颜色下标固定，界面按它取底色 */
+        private val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                val presets = listOf("老人", "儿童", "孕妇", "素食", "清真", "行动不便")
+                presets.forEachIndexed { index, label ->
+                    db.execSQL(
+                        "INSERT OR IGNORE INTO tag (label, colorIndex, sortOrder) VALUES (?, ?, ?)",
+                        arrayOf<Any>(label, index, index),
+                    )
+                }
+            }
+        }
+
         @Volatile
         private var instance: TourDatabase? = null
 
@@ -37,7 +63,7 @@ abstract class TourDatabase : RoomDatabase() {
                     TourDatabase::class.java,
                     NAME,
                 )
-                    .addMigrations(MIGRATION_1_2)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                     .addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
                             super.onCreate(db)

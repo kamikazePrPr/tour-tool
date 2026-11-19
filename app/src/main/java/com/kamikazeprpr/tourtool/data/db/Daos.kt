@@ -73,6 +73,12 @@ interface TagDao {
     @Query("SELECT * FROM tag ORDER BY sortOrder ASC, id ASC")
     fun observeAll(): Flow<List<Tag>>
 
+    @Query("SELECT * FROM tag ORDER BY sortOrder ASC, id ASC")
+    suspend fun getAll(): List<Tag>
+
+    @Query("DELETE FROM member_tag WHERE memberId = :memberId")
+    suspend fun unlinkAll(memberId: Long)
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(tag: Tag): Long
 
@@ -98,9 +104,31 @@ interface TagDao {
            WHERE m.teamId = :teamId ORDER BY t.sortOrder"""
     )
     suspend fun tagsOfTeam(teamId: Long): List<MemberTagLabel>
+
+    @Query(
+        """SELECT mt.memberId AS memberId,
+                  t.id AS id, t.label AS label, t.colorIndex AS colorIndex, t.sortOrder AS sortOrder
+           FROM member_tag mt
+           INNER JOIN tag t ON t.id = mt.tagId
+           INNER JOIN member m ON m.id = mt.memberId
+           WHERE m.teamId = :teamId ORDER BY t.sortOrder"""
+    )
+    suspend fun tagsOfTeamFull(teamId: Long): List<MemberTagFull>
+
+    @Query("SELECT * FROM tag WHERE id = :id")
+    suspend fun getById(id: Long): Tag?
 }
 
-/** 导出时用：一次把这个团所有人的标签捞出来，避免每人查一次 */
+/** 列表页显示标签用：带颜色下标，一次把整团捞出来 */
+data class MemberTagFull(
+    val memberId: Long,
+    val id: Long,
+    val label: String,
+    val colorIndex: Int,
+    val sortOrder: Int,
+)
+
+/** 导出用：只要名字 */
 data class MemberTagLabel(
     val memberId: Long,
     val label: String,

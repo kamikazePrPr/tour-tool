@@ -5,6 +5,8 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -74,6 +76,19 @@ fun TeamScreen(teamId: Long, onBack: () -> Unit) {
     var showExport by rememberSaveable { mutableStateOf(false) }
     var editMode by rememberSaveable { mutableStateOf(false) }
     var deleteTarget by remember { mutableStateOf<Member?>(null) }
+    var tagTarget by remember { mutableStateOf<Member?>(null) }
+    var tagVersion by remember { mutableStateOf(0) }
+
+    val memberTags by produceState(
+        initialValue = emptyMap<Long, List<com.kamikazeprpr.tourtool.data.db.MemberTagFull>>(),
+        members,
+        tagVersion,
+    ) { value = vm.tagsByMember() }
+
+    val allTags by produceState(
+        initialValue = emptyList<com.kamikazeprpr.tourtool.data.db.Tag>(),
+        tagVersion,
+    ) { value = vm.allTags() }
 
     val tagsByMember by produceState(
         initialValue = emptyMap<Long, List<String>>(),
@@ -232,8 +247,10 @@ fun TeamScreen(teamId: Long, onBack: () -> Unit) {
             members.forEach { m ->
                 MemberRow(
                     m = m,
+                    tags = memberTags[m.id].orEmpty(),
                     editMode = editMode,
                     onClick = { if (!editMode) editingMemberId = m.id },
+                    onLongClick = { if (!editMode) tagTarget = m },
                     onDelete = { deleteTarget = m },
                 )
                 Spacer(Modifier.height(10.dp))
@@ -253,8 +270,21 @@ fun TeamScreen(teamId: Long, onBack: () -> Unit) {
         }
     }
 
-    deleteTarget?.let { target ->
-        AlertDialog(
+    tagTarget?.let { target ->
+        TagDialog(
+            member = target,
+            allTags = allTags,
+            selectedIds = memberTags[target.id].orEmpty().map { it.id }.toSet(),
+            onDismiss = { tagTarget = null },
+            onSave = { ids ->
+                vm.saveMemberTags(target.id, ids)
+                tagTarget = null
+                tagVersion++
+            },
+        )
+    }
+
+    deleteTarget?.let { target ->        AlertDialog(
             onDismissRequest = { deleteTarget = null },
             title = { Text("确认删除？", fontSize = 22.sp) },
             text = {
@@ -276,11 +306,14 @@ fun TeamScreen(teamId: Long, onBack: () -> Unit) {
     }
 }
 
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 private fun MemberRow(
     m: Member,
+    tags: List<com.kamikazeprpr.tourtool.data.db.MemberTagFull>,
     editMode: Boolean,
     onClick: () -> Unit,
+    onLongClick: () -> Unit,
     onDelete: () -> Unit,
 ) {
     val ok = m.status == Member.STATUS_AUTO_OK || m.status == Member.STATUS_MANUAL_OK
@@ -298,8 +331,9 @@ private fun MemberRow(
     val detail = reading.filterNot { it == numLine }.joinToString("；")
 
     Card(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
@@ -317,6 +351,25 @@ private fun MemberRow(
                     fontWeight = FontWeight.SemiBold,
                     color = TextMain,
                 )
+                if (tags.isNotEmpty()) {
+                    Spacer(Modifier.height(6.dp))
+                    Row(
+                        modifier = Modifier.horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        tags.forEach { tag ->
+                            val style = com.kamikazeprpr.tourtool.ui.theme.TagColors.of(tag.colorIndex)
+                            Text(
+                                text = tag.label,
+                                fontSize = 13.sp,
+                                color = style.fg,
+                                modifier = Modifier
+                                    .background(style.bg, RoundedCornerShape(6.dp))
+                                    .padding(horizontal = 8.dp, vertical = 3.dp),
+                            )
+                        }
+                    }
+                }
                 Spacer(Modifier.height(3.dp))
                 Text(
                     text = buildString {
