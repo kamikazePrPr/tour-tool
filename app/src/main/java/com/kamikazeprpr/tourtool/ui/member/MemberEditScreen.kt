@@ -153,10 +153,11 @@ fun MemberEditScreen(
                 )
             }
 
-            // 右下角两个大按钮：不会捏合的人在手机上也能放大看清
+            // 右上角两个大按钮：不会捏合的人在手机上也能放大看清。
+            // 放右上是因为证件号码印在卡片右下，按钮放右下会正好压住最后几位数字。
             Column(
                 modifier = Modifier
-                    .align(Alignment.BottomEnd)
+                    .align(Alignment.TopEnd)
                     .padding(10.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
