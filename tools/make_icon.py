@@ -1,8 +1,9 @@
 """生成 App 图标：蓝底白字、2x2 排列的「旅游登记」。
 
-一次性脚本，产物写进 Android 资源目录；以后改配色或字样重跑即可。
+字形用微软雅黑粗体，再做一次形态学膨胀 + 轻微圆角化，
+笔画变粗、转角变圆，接近手写圆体的感觉；纯字体本身偏方。
 """
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageFilter
 import os
 
 RES = r"D:\AIsoft\projects\tour-tool\app\src\main\res"
@@ -11,20 +12,37 @@ BLUE = (31, 90, 166)      # #1F5AA6
 WHITE = (255, 255, 255)
 
 CHARS = "旅游登记"
-# 2x2 四个字的中心位置（相对画布）。
-# 桌面图标常被裁成圆形，圆形可见半径是 0.5 画布宽，
-# 所以字心收到 0.30/0.70、字号压到 0.24，四个角才不会被切掉。
+# 字心位置：桌面图标常被裁成圆形，可见半径是 0.5 画布宽，
+# 收到 0.325/0.675 之后即使在圆形遮罩里也不会切到笔画。
 CENTERS = [(0.325, 0.325), (0.675, 0.325), (0.325, 0.675), (0.675, 0.675)]
+
+# 在 1024 画布上：MaxFilter(13) 约等于膨胀 3 像素，模糊 2.4 再二值化得到圆角
+DILATE = 9
+ROUND = 1.8
+TEXT_RATIO_LEGACY = 0.215
+TEXT_RATIO_FG = TEXT_RATIO_LEGACY * 0.80   # 前景层放大，圆形遮罩下仍留有余量
 
 
 def draw_icon(size: int, bg, text_ratio: float) -> Image.Image:
     """bg=None 表示透明底（自适应图标的前景层）。"""
-    img = Image.new("RGBA", (size, size), bg if bg else (0, 0, 0, 0))
-    d = ImageDraw.Draw(img)
-    font_size = int(size * text_ratio)
-    font = ImageFont.truetype(FONT, font_size)
+    mask = Image.new("L", (size, size), 0)
+    d = ImageDraw.Draw(mask)
+    font = ImageFont.truetype(FONT, int(size * text_ratio))
     for ch, (rx, ry) in zip(CHARS, CENTERS):
-        d.text((size * rx, size * ry), ch, font=font, fill=WHITE, anchor="mm")
+        d.text((size * rx, size * ry), ch, font=font, fill=255, anchor="mm")
+
+    scale = size / 1024.0
+    k = int(DILATE * scale)
+    if k % 2 == 0:
+        k += 1
+    if k > 1:
+        mask = mask.filter(ImageFilter.MaxFilter(k))
+    mask = mask.filter(ImageFilter.GaussianBlur(max(0.5, ROUND * scale)))
+    mask = mask.point(lambda p: 255 if p > 120 else 0)
+
+    img = Image.new("RGBA", (size, size), bg if bg else (0, 0, 0, 0))
+    white = Image.new("RGBA", (size, size), (255, 255, 255, 255))
+    img.paste(white, (0, 0), mask)
     return img
 
 
@@ -44,8 +62,8 @@ DENSITIES = [
 ]
 
 # 先在大画布上画，再逐级缩小，边缘才干净
-BIG_LEGACY = draw_icon(1024, BLUE, 0.225)
-BIG_FG = draw_icon(1024, None, 0.225 * 0.66)   # 自适应图标安全区是中间 72/108
+BIG_LEGACY = draw_icon(1024, BLUE, TEXT_RATIO_LEGACY)
+BIG_FG = draw_icon(1024, None, TEXT_RATIO_FG)
 
 for folder, legacy_px, fg_px in DENSITIES:
     save(BIG_LEGACY, folder, "ic_launcher.png", legacy_px)
