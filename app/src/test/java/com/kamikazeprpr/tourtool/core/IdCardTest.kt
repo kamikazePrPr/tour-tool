@@ -111,6 +111,16 @@ class IdCardTest {
     }
 
     @Test
+    fun merge_untrustedNumber_doesNotDeriveGender() {
+        // 银行卡号被读成 18 位：日期码是假的，不能拿它去推性别
+        val bank = "Debit Card 621660 610001 5103577"
+        val r = CardParser.merge(listOf(bank, bank, bank))
+        assertFalse(r.autoOk)
+        assertTrue(r.issues.any { it.contains("日期") })
+        assertEquals(null, r.fields.gender)
+    }
+
+    @Test
     fun merge_genderConflict_needsReview() {
         val wrongGender = cardText.replace("性别 男", "性别 女")
         val r = CardParser.merge(listOf(wrongGender, wrongGender, wrongGender))

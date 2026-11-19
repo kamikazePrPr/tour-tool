@@ -248,7 +248,11 @@ object CardParser {
         val cardBirth = vote(parsed.map { it.birth })
         val cardGender = vote(parsed.map { it.gender })
 
-        if (number != null) {
+        // 只有号码本身就站得住脚时，才拿它去推性别和生日。
+        // 号码要是没过校验（比如把银行卡号读成 18 位了），从它推出来的性别毫无意义。
+        val numberTrusted = number != null && IdCard.validate(number).isEmpty()
+
+        if (numberTrusted && number != null) {
             // 内部统一用 yyyyMMdd，避免 "1962-08-11" 与 "19620811" 比不上的坑
             birth = IdCard.birthFromNumber(number)?.replace("-", "")
             gender = IdCard.genderFromNumber(number)
