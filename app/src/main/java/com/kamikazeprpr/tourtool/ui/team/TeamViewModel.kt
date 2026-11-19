@@ -173,6 +173,13 @@ class TeamViewModel(app: Application, private val teamId: Long) : AndroidViewMod
 
     suspend fun allTags(): List<com.kamikazeprpr.tourtool.data.db.Tag> = repo.allTags()
 
+    /** 对话框里新建标签，返回它的 id（已存在就返回老的），方便顺手勾上 */
+    suspend fun addTag(label: String): Long? {
+        val trimmed = label.trim()
+        if (trimmed.isEmpty()) return null
+        return repo.addTag(trimmed)
+    }
+
     fun saveMemberTags(memberId: Long, tagIds: List<Long>) {
         viewModelScope.launch { repo.setMemberTags(memberId, tagIds) }
     }

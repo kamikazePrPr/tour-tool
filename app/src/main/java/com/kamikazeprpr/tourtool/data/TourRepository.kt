@@ -45,6 +45,16 @@ class TourRepository(private val db: TourDatabase) {
 
     suspend fun allTags(): List<Tag> = db.tagDao().getAll()
 
+    suspend fun findTag(label: String): Tag? = db.tagDao().findByLabel(label)
+
+    /** 新建标签：颜色下标取当前标签数，天然跟已有的错开 */
+    suspend fun addTag(label: String): Long {
+        val existing = db.tagDao().findByLabel(label)
+        if (existing != null) return existing.id
+        val order = db.tagDao().getAll().size
+        return db.tagDao().insert(Tag(label = label, colorIndex = order, sortOrder = order))
+    }
+
     /** 整个成员标签集合一次替换：先清空再按勾选写入 */
     suspend fun setMemberTags(memberId: Long, tagIds: List<Long>) {
         db.tagDao().unlinkAll(memberId)

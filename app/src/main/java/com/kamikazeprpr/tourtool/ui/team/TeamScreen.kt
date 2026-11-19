@@ -276,6 +276,8 @@ fun TeamScreen(teamId: Long, onBack: () -> Unit) {
             allTags = allTags,
             selectedIds = memberTags[target.id].orEmpty().map { it.id }.toSet(),
             onDismiss = { tagTarget = null },
+            onAddTag = { label -> vm.addTag(label) },
+            onTagCreated = { tagVersion++ },
             onSave = { ids ->
                 vm.saveMemberTags(target.id, ids)
                 tagTarget = null
