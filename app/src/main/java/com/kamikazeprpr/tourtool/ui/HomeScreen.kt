@@ -67,6 +67,12 @@ fun HomeScreen() {
     var openTeamId by rememberSaveable { mutableStateOf<Long?>(null) }
     var showNewDialog by remember { mutableStateOf(false) }
     var editingTeam by remember { mutableStateOf<Team?>(null) }
+    var showAbout by remember { mutableStateOf(false) }
+
+    if (showAbout) {
+        com.kamikazeprpr.tourtool.ui.about.AboutScreen(onBack = { showAbout = false })
+        return
+    }
 
     val currentTeamId = openTeamId
     if (currentTeamId != null) {
@@ -94,6 +100,15 @@ fun HomeScreen() {
                 color = TextMuted,
                 modifier = Modifier
                     .clickable { (ctx as? android.app.Activity)?.finishAffinity() }
+                    .padding(vertical = 8.dp, horizontal = 4.dp),
+            )
+            Spacer(Modifier.weight(1f))
+            Text(
+                text = "ⓘ 关于",
+                fontSize = 17.sp,
+                color = TextMuted,
+                modifier = Modifier
+                    .clickable { showAbout = true }
                     .padding(vertical = 8.dp, horizontal = 4.dp),
             )
         }
@@ -154,6 +169,16 @@ fun HomeScreen() {
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
             )
         }
+
+        Spacer(Modifier.height(32.dp))
+        Text(
+            text = "版本 ${com.kamikazeprpr.tourtool.BuildConfig.VERSION_NAME}",
+            fontSize = 13.sp,
+            color = TextMuted,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+        )
+        Spacer(Modifier.height(8.dp))
     }
 
     editingTeam?.let { team ->

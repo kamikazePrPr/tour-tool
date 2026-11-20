@@ -38,14 +38,15 @@
 
 ## 发布新版本
 
-版本号规则（2026-11-19 定）：`versionName` 从 **0.0.5** 起，暂时只动最后一位——0.0.5 → 0.0.6 → 0.0.7，前两位不动。`versionCode` 和 `versionName` 解耦，每次发布单独加一（必须单调递增，否则覆盖安装会报 `INSTALL_FAILED_VERSION_DOWNGRADE`）。当前 versionName=0.0.5 对应 versionCode=10。
+版本号规则（2026-11-20 更新）：**0.1.0 是第一个可用版本**，以后只动最后一位——0.1.0 → 0.1.1 → 0.1.2，前两位不动。`versionCode` 和 `versionName` 解耦，每次发布单独加一（必须单调递增，否则覆盖安装会报 `INSTALL_FAILED_VERSION_DOWNGRADE`）。当前 versionName=0.1.0 对应 versionCode=22。
 
 ```bash
 # 1. 改 app/build.gradle.kts：versionName 最后一位 +1，versionCode +1
-# 2. 构建签名 APK
-# 3. 算校验和并发布（tag 写 v0.0.X）
+# 2. 在 ui/about/LegalText.kt 的 CHANGELOG 里加一条本次更新说明
+# 3. 构建签名 APK
+# 4. 算校验和并发布（tag 写 v0.1.X）
 certutil -hashfile app-release.apk SHA256
-gh release create v0.0.6 app-release.apk app-release.apk.sha256 --notes "更新说明"
+gh release create v0.1.1 app-release.apk app-release.apk.sha256 --notes "更新说明"
 ```
 
 App 端会读取 `kamikazePrPr/tour-tool` 的最新 Release（用 `/releases` 列表而不是 `/releases/latest`——后者遇到只有 prerelease 时返回 404），下载后校验 SHA-256、包名、签名证书摘要，三道全过才拉起系统安装。Manifest 里必须保留 `REQUEST_INSTALL_PACKAGES`，缺了系统安装器会直接拒绝。

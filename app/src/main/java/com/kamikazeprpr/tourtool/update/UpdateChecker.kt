@@ -55,21 +55,24 @@ object UpdateChecker {
      * 冷启动后调一次。超时短、失败静默，绝不因为网络问题卡住启动。
      * 6 小时内查过就直接算「已是最新」——首页每次重建组合都会调这里，
      * 不拦一下的话每进一次首页就发一次请求，白耗流量和电。
+     *
+     * @param force 「关于」页里手点的那次，跳过缓存直接问服务器
      */
-    suspend fun check(ctx: android.content.Context): CheckResult = withContext(Dispatchers.IO) {
-        val now = System.currentTimeMillis()
-        val last = com.kamikazeprpr.tourtool.data.AppPrefs.lastUpdateCheckAt(ctx)
-        if (now - last in 0 until CACHE_MS) {
-            AppLog.d("UPDATE", "6 小时内查过了，跳过")
-            return@withContext CheckResult.UpToDate
+    suspend fun check(ctx: android.content.Context, force: Boolean = false): CheckResult =
+        withContext(Dispatchers.IO) {
+            val now = System.currentTimeMillis()
+            val last = com.kamikazeprpr.tourtool.data.AppPrefs.lastUpdateCheckAt(ctx)
+            if (!force && now - last in 0 until CACHE_MS) {
+                AppLog.d("UPDATE", "6 小时内查过了，跳过")
+                return@withContext CheckResult.UpToDate
+            }
+            val result = fetchLatest()
+            // 只有真的问到服务器了才记时间，网络失败下次还能再试
+            if (result !is CheckResult.Failed) {
+                com.kamikazeprpr.tourtool.data.AppPrefs.setLastUpdateCheckAt(ctx, now)
+            }
+            result
         }
-        val result = fetchLatest()
-        // 只有真的问到服务器了才记时间，网络失败下次还能再试
-        if (result !is CheckResult.Failed) {
-            com.kamikazeprpr.tourtool.data.AppPrefs.setLastUpdateCheckAt(ctx, now)
-        }
-        result
-    }
 
     private suspend fun fetchLatest(): CheckResult = withContext(Dispatchers.IO) {
         try {

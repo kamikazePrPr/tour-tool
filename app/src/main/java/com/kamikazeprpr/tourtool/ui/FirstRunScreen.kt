@@ -28,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.kamikazeprpr.tourtool.ui.about.LegalText
 import com.kamikazeprpr.tourtool.ui.theme.TextMain
 import com.kamikazeprpr.tourtool.ui.theme.TextMuted
 
@@ -60,7 +61,7 @@ fun FirstRunScreen(
                 .padding(horizontal = 22.dp, vertical = 20.dp),
         ) {
             Text(
-                text = "个人信息处理与使用声明",
+                text = LegalText.PRIVACY_TITLE,
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
                 color = TextMain,
@@ -73,31 +74,8 @@ fun FirstRunScreen(
             )
             Spacer(Modifier.height(18.dp))
 
-            Paragraph(
-                "本应用仅从用户经被采集人同意后拍摄或选取的证件照片中，收集姓名、性别、公民身份号码、" +
-                    "出生日期。处理目的仅限为游客办理出行登记、统一投保旅游意外险及出行时核验身份，不得另作他用。"
-            )
-            Paragraph(
-                "公民身份号码、出生日期依《个人信息保护法》第二十八条按敏感个人信息处理。" +
-                    "个人信息处理者应事先向被采集人告知处理的必要性及对个人权益的影响，并取得其单独同意。"
-            )
-            Paragraph(
-                "个人信息均在本设备本地离线处理，仅存于应用私有目录，不上传任何服务器、不进行云备份，" +
-                    "不作自动化决策或画像。不向任何第三方提供、转让或公开披露；" +
-                    "严禁出售、非法买卖、非法向他人提供个人信息。"
-            )
-            Paragraph(
-                "仅连接 GitHub 相关域名检查、下载应用更新，不经该等连接传输任何个人信息。" +
-                    "本地运行日志不含姓名及完整证件号码，保存 7 日后自动删除。" +
-                    "个人信息的保存期限截至用户主动删除之时；用户可删除单个团或全部数据，删除后不可恢复，" +
-                    "已导出的表格文件不因本机删除而失效。"
-            )
-            Paragraph(
-                "用户及被采集人有权查阅、复制、更正、删除其个人信息及撤回同意，" +
-                    "撤回不影响此前基于同意已进行的处理。" +
-                    "用户不得利用本应用从事违法违规活动，包括但不限于冒用他人身份、伪造变造证件、" +
-                    "未经同意收集他人个人信息、出售或非法提供他人个人信息。"
-            )
+            // 与「关于 → 用户隐私与协议」是同一份文本，改一处两边同步
+            LegalText.PRIVACY_PARAGRAPHS.forEach { Paragraph(it) }
         }
 
         Column(
