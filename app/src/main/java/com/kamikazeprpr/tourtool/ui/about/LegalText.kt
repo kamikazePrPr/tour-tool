@@ -108,6 +108,16 @@ object LegalText {
 
     val CHANGELOG = listOf(
         Release(
+            version = "0.1.1",
+            date = "2026-11-20",
+            notes = listOf(
+                "团名右边加了「＋ 直接添加」：没拍照片的人也能录，手填姓名、性别、号码、手机",
+                "手动录入时身份证号可以留空，姓名必填；号码填了仍然要过校验",
+                "更新下载增加国内加速镜像，直连 GitHub 不通时自动换源",
+                "关于页里二级页面的左上角统一显示「返回」",
+            ),
+        ),
+        Release(
             version = "0.1.0",
             date = "2026-11-20",
             notes = listOf(

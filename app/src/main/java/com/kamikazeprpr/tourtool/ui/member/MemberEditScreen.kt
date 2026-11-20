@@ -77,6 +77,7 @@ fun MemberEditScreen(
     member: Member,
     onSave: (name: String, gender: String, idNumber: String, phone: String) -> Unit,
     onBack: () -> Unit,
+    isNew: Boolean = false,
 ) {
     val ctx = LocalContext.current
     var name by remember { mutableStateOf(member.name) }
@@ -102,7 +103,14 @@ fun MemberEditScreen(
     // 手机号固定 11 位：不填可以不报错，填了位数不对就当场提示，边输边算
     val phoneFilled = phone.isNotEmpty()
     val phoneOk = !phoneFilled || phone.length == 11
-    val canSave = name.isNotBlank() && cleanNumber.length == 18 && numberIssues.isEmpty() && phoneOk
+    // 手动添加时身份证号可以留空（有人只留个名字和电话），填了就必须对；
+    // 从照片来的那条要求必须有效，否则存进去的东西没有校验托底
+    val numberOk = if (isNew) {
+        cleanNumber.isEmpty() || (cleanNumber.length == 18 && numberIssues.isEmpty())
+    } else {
+        cleanNumber.length == 18 && numberIssues.isEmpty()
+    }
+    val canSave = name.isNotBlank() && phoneOk && numberOk
 
     val transformState = rememberTransformableState { zoom, pan, _ ->
         scale = (scale * zoom).coerceIn(1f, 6f)
@@ -142,21 +150,40 @@ fun MemberEditScreen(
             )
             Spacer(Modifier.weight(1f))
             Text(
-                text = "第 ${member.seq} 个",
+                text = if (isNew) "手动添加" else "第 ${member.seq} 个",
                 fontSize = 16.sp,
                 color = TextMuted,
             )
         }
 
-        // ---- 原图 ----
+        // ---- 原图（手动添加时没有图，就用一块说明代替）----
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(if (keyboardUp) 0.16f else 0.42f)
+                // 手动录入没有图可看，别让它白占三分之一屏
+                .weight(if (keyboardUp) 0.16f else if (isNew) 0.20f else 0.42f)
                 .padding(horizontal = 12.dp)
                 .clip(RoundedCornerShape(10.dp))
                 .background(androidx.compose.ui.graphics.Color(0xFF222222)),
         ) {
+            if (isNew) {
+                Column(
+                    modifier = Modifier.align(Alignment.Center),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(
+                        text = "手动录入",
+                        fontSize = 20.sp,
+                        color = androidx.compose.ui.graphics.Color.White,
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        text = "没照片也能录，号码回头补",
+                        fontSize = 14.sp,
+                        color = androidx.compose.ui.graphics.Color(0xFFAAAAAA),
+                    )
+                }
+            }
             val bmp = bitmap
             if (bmp != null) {
                 Image(
@@ -173,7 +200,7 @@ fun MemberEditScreen(
                         )
                         .transformable(transformState),
                 )
-            } else {
+            } else if (!isNew) {
                 Text(
                     text = "原图打不开了\n可能已经不在相册里",
                     modifier = Modifier.align(Alignment.Center),
@@ -184,18 +211,21 @@ fun MemberEditScreen(
 
             // 右上角两个大按钮：不会捏合的人在手机上也能放大看清。
             // 放右上是因为证件号码印在卡片右下，按钮放右下会正好压住最后几位数字。
-            Column(
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(10.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                ZoomButton("＋") {
-                    scale = (scale * 1.5f).coerceIn(1f, 6f)
-                }
-                ZoomButton("－") {
-                    scale = (scale / 1.5f).coerceIn(1f, 6f)
-                    if (scale <= 1f) offset = Offset.Zero
+            // 没有图（手动添加、或原图已失效）就不显示，免得点了没反应。
+            if (bitmap != null) {
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    ZoomButton("＋") {
+                        scale = (scale * 1.5f).coerceIn(1f, 6f)
+                    }
+                    ZoomButton("－") {
+                        scale = (scale / 1.5f).coerceIn(1f, 6f)
+                        if (scale <= 1f) offset = Offset.Zero
+                    }
                 }
             }
         }
@@ -300,7 +330,7 @@ fun MemberEditScreen(
                     .height(58.dp),
                 shape = RoundedCornerShape(12.dp),
             ) {
-                Text("确认", fontSize = 20.sp)
+                Text(if (isNew) "保存" else "确认", fontSize = 20.sp)
             }
 
             Spacer(Modifier.height(10.dp))

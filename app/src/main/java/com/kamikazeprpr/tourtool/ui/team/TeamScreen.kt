@@ -79,6 +79,20 @@ fun TeamScreen(teamId: Long, onBack: () -> Unit) {
     var deleteTarget by remember { mutableStateOf<Member?>(null) }
     var tagTarget by remember { mutableStateOf<Member?>(null) }
     var confirmClearTags by remember { mutableStateOf(false) }
+    var addingNew by rememberSaveable { mutableStateOf(false) }
+
+    if (addingNew) {
+        com.kamikazeprpr.tourtool.ui.member.MemberEditScreen(
+            member = Member(teamId = teamId, seq = (members.size + 1)),
+            isNew = true,
+            onSave = { n, g, num, phone ->
+                vm.addManualMember(n, g, num, phone)
+                addingNew = false
+            },
+            onBack = { addingNew = false },
+        )
+        return
+    }
     var tagVersion by remember { mutableStateOf(0) }
 
     val memberTags by produceState(
@@ -155,28 +169,60 @@ fun TeamScreen(teamId: Long, onBack: () -> Unit) {
                 )
             }
             Spacer(Modifier.weight(1f))
-            Text(
-                text = if (editMode) "完成" else "编辑",
-                fontSize = 18.sp,
-                color = MaterialTheme.colorScheme.primary,
+            // 固定 64dp 居中，跟下面「＋ 直接添加」那一列用同一个宽度，
+            // 不然「编辑」两个字窄、「直接添加」四个字宽，右对齐以后加号会偏到左边去
+            Box(
                 modifier = Modifier
+                    .width(64.dp)
                     .clickable { editMode = !editMode }
-                    .padding(horizontal = 10.dp, vertical = 6.dp),
-            )
+                    .padding(vertical = 6.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = if (editMode) "完成" else "编辑",
+                    fontSize = 18.sp,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
         }
 
-        Text(
-            text = team?.name ?: "…",
-            fontSize = 26.sp,
-            fontWeight = FontWeight.Bold,
-            color = TextMain,
-        )
-        Spacer(Modifier.height(4.dp))
-        Text(
-            text = if (members.isEmpty()) "还没有登记客户" else "已经登记 ${members.size} 位客户",
-            fontSize = 17.sp,
-            color = TextMuted,
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = team?.name ?: "…",
+                    fontSize = 26.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TextMain,
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = if (members.isEmpty()) "还没有登记客户" else "已经登记 ${members.size} 位客户",
+                    fontSize = 17.sp,
+                    color = TextMuted,
+                )
+            }
+            // 团名右边：绿色加号 + 「直接添加」，给没有照片、只有名字和电话的人用。
+            // 宽度跟上面「编辑」一样是 64dp，两处竖着看是一条线。
+            Column(
+                modifier = Modifier
+                    .width(64.dp)
+                    .clickable { addingNew = true }
+                    .padding(top = 2.dp, bottom = 2.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(
+                    text = "＋",
+                    fontSize = 30.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = StateOk,
+                )
+                Text(
+                    text = "直接添加",
+                    fontSize = 11.sp,
+                    color = StateOk,
+                )
+            }
+        }
 
         Spacer(Modifier.height(20.dp))
 

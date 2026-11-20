@@ -15,8 +15,8 @@ android {
         applicationId = "com.kamikazeprpr.tourtool"
         minSdk = 24
         targetSdk = 35
-        versionCode = 22
-        versionName = "0.1.0"
+        versionCode = 24
+        versionName = "0.1.1"
         resourceConfigurations += listOf("zh", "zh-rCN")
     }
 
@@ -33,6 +33,12 @@ android {
                     storePassword = props.getProperty("storePassword")
                     keyAlias = props.getProperty("keyAlias")
                     keyPassword = props.getProperty("keyPassword")
+                    // 三套签名全开。AGP 在 minSdk>=24 时默认只做 v2，
+                    // 但部分国产 ROM 的安装器（OPPO/ColorOS 这类）坚持校验 v1，
+                    // 只有 v2 的包会被判成「不是安装包」，连安装界面都进不去。
+                    enableV1Signing = true
+                    enableV2Signing = true
+                    enableV3Signing = true
                 }
                 signingConfig = signingConfigs.getByName("release")
             }

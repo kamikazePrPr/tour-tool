@@ -27,6 +27,16 @@ object UpdateChecker {
 
     private const val CACHE_MS = 6L * 60 * 60 * 1000
 
+    /**
+     * 下载源前缀，空串表示直连。按顺序试，前面的不通再换后面。
+     * 两个镜像 2026-11-20 实测都能完整拉下 50MB 的安装包。
+     */
+    private val DOWNLOAD_SOURCES = listOf(
+        "",
+        "https://gh-proxy.com/",
+        "https://ghfast.top/",
+    )
+
     private const val OWNER = "kamikazePrPr"
     private const val REPO = "tour-tool"
     // 用 releases 列表而不是 /releases/latest：后者只认正式版，
@@ -211,10 +221,42 @@ object UpdateChecker {
         return false
     }
 
+    /**
+     * 下载安装包，按顺序试多个源。
+     *
+     * 直连 GitHub 在国内经常几 KB/s 甚至断流，所以准备两个国内可用的加速镜像兜底：
+     * 直连 → gh-proxy.com → ghfast.top。哪个先下完用哪个，全失败才报错。
+     *
+     * 安全上不依赖镜像：版本信息和 sha256 都是直连 api.github.com 拿的，
+     * 镜像只负责传字节，下完照样校验，改过的包一律装不上。
+     */
     private fun downloadTo(url: String, out: File) {
+        var lastError: Exception? = null
+        for (prefix in DOWNLOAD_SOURCES) {
+            val target = if (prefix.isEmpty()) url else prefix + url
+            try {
+                downloadOnce(target, out)
+                if (out.length() > 0) {
+                    AppLog.i("UPDATE", "下载源：${if (prefix.isEmpty()) "GitHub 直连" else prefix}")
+                    return
+                }
+            } catch (e: Exception) {
+                lastError = e
+                out.delete()
+                AppLog.d(
+                    "UPDATE",
+                    "下载源 ${if (prefix.isEmpty()) "直连" else prefix} 不通：" +
+                        (e.message?.take(60) ?: e.javaClass.simpleName),
+                )
+            }
+        }
+        throw lastError ?: java.io.IOException("所有下载源都不通")
+    }
+
+    private fun downloadOnce(url: String, out: File) {
         val conn = (URL(url).openConnection() as HttpURLConnection).apply {
             connectTimeout = 8000
-            readTimeout = 15000
+            readTimeout = 20000
             instanceFollowRedirects = true
             setRequestProperty("User-Agent", "tour-tool")
         }

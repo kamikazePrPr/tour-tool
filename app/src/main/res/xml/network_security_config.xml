@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  联网白名单：只放行 GitHub 的四个域，其余一律拒绝。
+  联网白名单：GitHub 官方域 + 两个中国大陆可用的下载加速镜像。
   这份文件是打进 APK 的静态资源，可以用 aapt2 dump xmltree 导出来验证。
+
+  镜像只用来取 APK 文件本身，查询版本仍然直连 api.github.com；
+  下载完照样要过 sha256 校验，镜像即使被劫持也装不上别的东西。
 -->
 <network-security-config>
     <base-config cleartextTrafficPermitted="false">
@@ -15,5 +18,8 @@
         <domain includeSubdomains="true">github.com</domain>
         <domain includeSubdomains="true">objects.githubusercontent.com</domain>
         <domain includeSubdomains="true">codeload.github.com</domain>
+        <!-- 国内加速：直连失败时依次尝试。2026-11-20 实测两个都能完整拉下 50MB 的包。 -->
+        <domain includeSubdomains="true">gh-proxy.com</domain>
+        <domain includeSubdomains="true">ghfast.top</domain>
     </domain-config>
 </network-security-config>

@@ -163,6 +163,32 @@ class TeamViewModel(app: Application, private val teamId: Long) : AndroidViewMod
         }
     }
 
+    /** 手动添加一个人：没有照片，姓名必填，号码可空（填了就得对） */
+    fun addManualMember(name: String, gender: String, idNumber: String, phone: String) {
+        viewModelScope.launch {
+            val cleanNumber = IdCard.normalizeNumber(idNumber)
+            val hasNumber = cleanNumber.length == 18
+            val issues = if (hasNumber) IdCard.validate(cleanNumber) else emptyList()
+            val birth = if (hasNumber) IdCard.birthFromNumber(cleanNumber) else null
+            repo.addMember(
+                teamId = teamId,
+                name = name.trim(),
+                gender = gender,
+                idNumber = cleanNumber,
+                birthDate = birth,
+                status = if (hasNumber && issues.isEmpty()) Member.STATUS_MANUAL_OK else Member.STATUS_NEED_REVIEW,
+                failReasons = when {
+                    issues.isNotEmpty() -> issues.joinToString("；")
+                    !hasNumber -> "手动录入，没有身份证号"
+                    else -> null
+                },
+                sourceUri = null,
+                uriPermissionHeld = false,
+                phone = phone.trim(),
+            )
+        }
+    }
+
     fun deleteMember(member: Member) {
         viewModelScope.launch { repo.deleteMember(member) }
     }

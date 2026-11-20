@@ -74,7 +74,8 @@ class TourRepository(private val db: TourDatabase) {
 
     suspend fun deleteMember(member: Member) = db.memberDao().delete(member)
 
-    suspend fun addMember(        teamId: Long,
+    suspend fun addMember(
+        teamId: Long,
         name: String,
         gender: String,
         idNumber: String,
@@ -83,6 +84,7 @@ class TourRepository(private val db: TourDatabase) {
         failReasons: String?,
         sourceUri: String?,
         uriPermissionHeld: Boolean,
+        phone: String = "",
     ): Long {
         val seq = db.memberDao().countByTeam(teamId) + 1
         return db.memberDao().insert(
@@ -92,6 +94,7 @@ class TourRepository(private val db: TourDatabase) {
                 name = name,
                 gender = gender,
                 idNumber = idNumber,
+                phone = phone,
                 birthDate = birthDate,
                 status = status,
                 failReasons = failReasons,

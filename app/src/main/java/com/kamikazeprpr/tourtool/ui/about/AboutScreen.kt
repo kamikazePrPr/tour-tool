@@ -134,7 +134,7 @@ private fun SectionScreen(section: Section, onBack: () -> Unit) {
             .systemBarsPadding()
             .background(MaterialTheme.colorScheme.background),
     ) {
-        BackRow(onBack, section.title)
+        BackRow(onBack, "返回")
 
         Column(
             modifier = Modifier
