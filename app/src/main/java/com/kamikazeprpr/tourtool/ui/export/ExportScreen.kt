@@ -333,8 +333,15 @@ private fun FormatChip(text: String, selected: Boolean, onClick: () -> Unit) {
 
 @Composable
 private fun TablePreview(header: List<String>, rows: List<List<String>>, textColumns: Set<Int>) {
-    // 表头和数据必须用同一套列宽，否则两边错位（之前表头写死 150、数据写死 200，就对不上了）
-    fun widthOf(i: Int) = if (i in textColumns) 200.dp else 78.dp
+    // 表头和数据必须用同一套列宽，否则两边错位；宽度按内容给，手机号这种 11 位数不能挤成两行
+    fun widthOf(i: Int): Dp = when (header.getOrNull(i)) {
+        "证件号码" -> 200.dp
+        "手机" -> 118.dp
+        "出生日期" -> 108.dp
+        "证件类型" -> 88.dp
+        "序号" -> 52.dp
+        else -> 78.dp
+    }
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -350,6 +357,8 @@ private fun TablePreview(header: List<String>, rows: List<List<String>>, textCol
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = TextMain,
+                    maxLines = 1,
+                    softWrap = false,
                 )
             }
         }
@@ -365,6 +374,8 @@ private fun TablePreview(header: List<String>, rows: List<List<String>>, textCol
                         modifier = Modifier.width(widthOf(i)),
                         fontSize = 14.sp,
                         color = TextMain,
+                        maxLines = 1,
+                        softWrap = false,
                     )
                 }
             }
