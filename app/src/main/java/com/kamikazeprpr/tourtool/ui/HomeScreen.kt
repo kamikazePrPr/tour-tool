@@ -208,7 +208,7 @@ private fun TeamCard(
                 Text(team.name, fontSize = 21.sp, fontWeight = FontWeight.SemiBold, color = TextMain)
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    text = if (memberCount == 0) "还没有登记人" else "已经登记 $memberCount 人",
+                    text = if (memberCount == 0) "还没有登记客户" else "已经登记 $memberCount 位客户",
                     fontSize = 16.sp,
                     color = TextMuted,
                 )

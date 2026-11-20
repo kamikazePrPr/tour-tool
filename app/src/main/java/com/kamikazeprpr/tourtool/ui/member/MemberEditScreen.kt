@@ -13,8 +13,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -23,6 +26,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -105,10 +109,16 @@ fun MemberEditScreen(
         offset += pan
     }
 
+    // 键盘弹出来的时候把原图压小，把地方让给输入框——不然手机号那一栏会被输入法整个盖住
+    val density = LocalDensity.current
+    val imeBottom = WindowInsets.ime.getBottom(density)
+    val keyboardUp = imeBottom > 0
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .systemBarsPadding()
+            .imePadding()
             .background(MaterialTheme.colorScheme.background),
     ) {
         Row(
@@ -142,7 +152,7 @@ fun MemberEditScreen(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(0.42f)
+                .weight(if (keyboardUp) 0.16f else 0.42f)
                 .padding(horizontal = 12.dp)
                 .clip(RoundedCornerShape(10.dp))
                 .background(androidx.compose.ui.graphics.Color(0xFF222222)),
@@ -194,7 +204,7 @@ fun MemberEditScreen(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(0.58f)
+                .weight(if (keyboardUp) 0.84f else 0.58f)
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp, vertical = 12.dp),
         ) {

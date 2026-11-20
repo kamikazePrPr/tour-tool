@@ -4,6 +4,7 @@ import android.app.Activity
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -18,6 +19,9 @@ import com.kamikazeprpr.tourtool.ui.theme.TourToolTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // 走 edge-to-edge，Compose 才能拿到键盘高度做 imePadding；
+        // 各页面自己用 systemBarsPadding 让开状态栏和导航栏
+        enableEdgeToEdge()
         setContent {
             TourToolTheme {
                 AppRoot()

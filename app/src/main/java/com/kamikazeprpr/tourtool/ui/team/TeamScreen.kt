@@ -173,7 +173,7 @@ fun TeamScreen(teamId: Long, onBack: () -> Unit) {
         )
         Spacer(Modifier.height(4.dp))
         Text(
-            text = if (members.isEmpty()) "还没有登记人" else "已经登记 ${members.size} 人",
+            text = if (members.isEmpty()) "还没有登记客户" else "已经登记 ${members.size} 位客户",
             fontSize = 17.sp,
             color = TextMuted,
         )
