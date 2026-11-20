@@ -26,6 +26,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -457,6 +458,15 @@ private fun MemberRow(
                         color = if (ok) TextMuted else StateWarn,
                     )
                 }
+                // 手机号单独一行挂在身份证号下面；没填就不占地方
+                if (m.phone.isNotBlank()) {
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = m.phone,
+                        fontSize = 15.sp,
+                        color = TextMain,
+                    )
+                }
             }
             if (editMode) {
                 // 编辑模式下右侧换成红叉，点它先问一句再删
@@ -474,6 +484,16 @@ private fun MemberRow(
                     )
                 }
             } else if (ok) {
+                // 登记了手机号的，勾前面挂个绿色小电话，名单上扫一眼就知道谁留了联系方式
+                if (m.phone.isNotBlank()) {
+                    Icon(
+                        imageVector = Icons.Default.Phone,
+                        contentDescription = "留了手机号",
+                        tint = StateOk,
+                        modifier = Modifier.size(24.dp),
+                    )
+                    Spacer(Modifier.width(8.dp))
+                }
                 Icon(
                     imageVector = Icons.Default.Check,
                     contentDescription = "已经核对通过",
