@@ -45,7 +45,7 @@
 # 2. 在 ui/about/LegalText.kt 的 CHANGELOG 里加一条本次更新说明
 # 3. 构建签名 APK
 # 4. 算校验和并发布（tag 写 v0.1.X）
-#    交付给使用者的那份固定叫「旅游登记工具.apk」，覆盖同名、不带版本号
+#    交付给使用者的那份叫「旅游登记工具_<版本>.apk」，放到下载文件夹
 certutil -hashfile app-release.apk SHA256
 gh release create v0.1.1 app-release.apk app-release.apk.sha256 --notes "更新说明"
 ```
