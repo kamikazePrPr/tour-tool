@@ -34,6 +34,9 @@ object ExportSaver {
 
     private fun saveViaMediaStore(ctx: Context, file: File, mimeType: String): Result {
         val resolver = ctx.contentResolver
+        // 同名文件先删掉再用新的顶上，不然同一天导三次会堆出「Osaka_20261120 (1)(2)(3)」
+        deleteExisting(ctx, file.name)
+
         val values = ContentValues().apply {
             put(MediaStore.MediaColumns.DISPLAY_NAME, file.name)
             put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
@@ -54,6 +57,32 @@ object ExportSaver {
 
         AppLog.i("EXPORT", "已存到下载目录：${file.name}")
         return Result(true, "已经存到「下载」文件夹：${file.name}")
+    }
+
+    /** 删掉「下载」里同名的旧文件（只动我们自己这种命名格式的） */
+    private fun deleteExisting(ctx: Context, displayName: String) {
+        try {
+            val resolver = ctx.contentResolver
+            val collection = MediaStore.Downloads.EXTERNAL_CONTENT_URI
+            resolver.query(
+                collection,
+                arrayOf(MediaStore.MediaColumns._ID),
+                "${MediaStore.MediaColumns.DISPLAY_NAME}=? AND ${MediaStore.MediaColumns.RELATIVE_PATH}=?",
+                arrayOf(displayName, "${Environment.DIRECTORY_DOWNLOADS}/"),
+                null,
+            )?.use { cursor ->
+                while (cursor.moveToNext()) {
+                    val id = cursor.getLong(0)
+                    resolver.delete(
+                        android.content.ContentUris.withAppendedId(collection, id),
+                        null,
+                        null,
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            AppLog.d("EXPORT", "清理同名旧文件失败（不影响保存）：${e.message}")
+        }
     }
 
     @Suppress("DEPRECATION")
