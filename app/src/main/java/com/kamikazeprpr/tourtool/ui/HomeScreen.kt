@@ -61,6 +61,7 @@ import com.kamikazeprpr.tourtool.ui.theme.TextMuted
 @Composable
 fun HomeScreen() {
     val vm: HomeViewModel = viewModel()
+    val ctx = LocalContext.current
     val teams by vm.teams.collectAsStateWithLifecycle()
     var openTeamId by rememberSaveable { mutableStateOf<Long?>(null) }
     var showNewDialog by remember { mutableStateOf(false) }
@@ -78,10 +79,24 @@ fun HomeScreen() {
             .systemBarsPadding()
             .background(MaterialTheme.colorScheme.background)
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 20.dp, vertical = 24.dp),
+            .padding(horizontal = 20.dp, vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top,
     ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = "退出",
+                fontSize = 17.sp,
+                color = TextMuted,
+                modifier = Modifier
+                    .clickable { (ctx as? android.app.Activity)?.finishAffinity() }
+                    .padding(vertical = 8.dp, horizontal = 4.dp),
+            )
+        }
+        Spacer(Modifier.height(4.dp))
         Text(
             text = "旅游证件登记",
             fontSize = 28.sp,
