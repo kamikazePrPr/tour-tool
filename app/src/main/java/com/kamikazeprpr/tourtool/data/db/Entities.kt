@@ -45,6 +45,8 @@ data class Member(
     val name: String = "",
     val gender: String = "",          // "M" / "F" / ""（未知）
     val idNumber: String = "",        // 18 位，末位可能是 X
+    /** 手机号：身份证上没有，只能手填 */
+    val phone: String = "",
     val birthDate: String? = null,    // yyyy-MM-dd
     val registeredAt: Long = System.currentTimeMillis(), // 登记时间：处理当时，仅 App 内显示，不导出
     val status: String = STATUS_NEED_REVIEW,

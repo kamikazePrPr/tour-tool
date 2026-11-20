@@ -9,7 +9,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     entities = [Team::class, Member::class, Tag::class, MemberTag::class],
-    version = 4,
+    version = 5,
     exportSchema = true,
 )
 abstract class TourDatabase : RoomDatabase() {
@@ -24,6 +24,13 @@ abstract class TourDatabase : RoomDatabase() {
         private val MIGRATION_1_2 = object : Migration(1, 2) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE team ADD COLUMN endDate TEXT")
+            }
+        }
+
+        /** v4 → v5：每个人加手机号（身份证上没有，只能手填） */
+        private val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE member ADD COLUMN phone TEXT NOT NULL DEFAULT ''")
             }
         }
 
@@ -63,7 +70,7 @@ abstract class TourDatabase : RoomDatabase() {
                     TourDatabase::class.java,
                     NAME,
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
                     .addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
                             super.onCreate(db)

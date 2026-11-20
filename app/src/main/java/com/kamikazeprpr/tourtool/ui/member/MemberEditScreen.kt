@@ -71,13 +71,14 @@ import kotlinx.coroutines.withContext
 @Composable
 fun MemberEditScreen(
     member: Member,
-    onSave: (name: String, gender: String, idNumber: String) -> Unit,
+    onSave: (name: String, gender: String, idNumber: String, phone: String) -> Unit,
     onBack: () -> Unit,
 ) {
     val ctx = LocalContext.current
     var name by remember { mutableStateOf(member.name) }
     var gender by remember { mutableStateOf(member.gender) }
     var idNumber by remember { mutableStateOf(member.idNumber) }
+    var phone by remember { mutableStateOf(member.phone) }
     // 打开就放大一点，让卡面上的字看得清；不会捏合的人用右上角的正负按钮
     var scale by remember { mutableFloatStateOf(1.7f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
@@ -94,7 +95,9 @@ fun MemberEditScreen(
 
     val cleanNumber = IdCard.normalizeNumber(idNumber)
     val numberIssues = if (cleanNumber.length >= 15) IdCard.validate(cleanNumber) else emptyList()
-    val canSave = name.isNotBlank() && cleanNumber.length == 18 && numberIssues.isEmpty()
+    // 手机号可以不填；填了就得是 11 位、1 开头，填错不让存
+    val phoneOk = phone.isBlank() || (phone.length == 11 && phone.startsWith("1"))
+    val canSave = name.isNotBlank() && cleanNumber.length == 18 && numberIssues.isEmpty() && phoneOk
 
     val transformState = rememberTransformableState { zoom, pan, _ ->
         scale = (scale * zoom).coerceIn(1f, 6f)
@@ -252,10 +255,33 @@ fun MemberEditScreen(
                 )
             }
 
+            Spacer(Modifier.height(12.dp))
+
+            OutlinedTextField(
+                value = phone,
+                onValueChange = { input -> phone = input.filter { it.isDigit() }.take(11) },
+                label = { Text("手机号", fontSize = 16.sp) },
+                placeholder = { Text("可以不填", fontSize = 18.sp) },
+                singleLine = true,
+                isError = !phoneOk,
+                textStyle = MaterialTheme.typography.bodyLarge.copy(fontSize = 20.sp),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                modifier = Modifier.fillMaxWidth(),
+            )
+            if (!phoneOk) {
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    text = "手机号要 11 位，1 开头",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = StateBad,
+                )
+            }
+
             Spacer(Modifier.height(18.dp))
 
             Button(
-                onClick = { onSave(name, gender, cleanNumber) },
+                onClick = { onSave(name, gender, cleanNumber, phone) },
                 enabled = canSave,
                 modifier = Modifier
                     .fillMaxWidth()

@@ -110,8 +110,8 @@ fun TeamScreen(teamId: Long, onBack: () -> Unit) {
     if (editing != null) {
         com.kamikazeprpr.tourtool.ui.member.MemberEditScreen(
             member = editing,
-            onSave = { n, g, num ->
-                vm.saveManual(editing, n, g, num)
+            onSave = { n, g, num, phone ->
+                vm.saveManual(editing, n, g, num, phone)
                 editingMemberId = null
             },
             onBack = { editingMemberId = null },

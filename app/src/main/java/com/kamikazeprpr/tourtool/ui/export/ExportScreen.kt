@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
 import com.kamikazeprpr.tourtool.data.db.Member
 import com.kamikazeprpr.tourtool.export.ExportService
+import com.kamikazeprpr.tourtool.export.ExportSaver
 import com.kamikazeprpr.tourtool.ui.theme.DeepIndigo
 import com.kamikazeprpr.tourtool.ui.theme.TextMain
 import com.kamikazeprpr.tourtool.ui.theme.TextMuted
@@ -73,24 +74,41 @@ fun ExportScreen(
         ExportService.buildTable(members, tagsByMember, columns, sortBy, descending)
     }
 
-    fun doExport() {
+    val mimeType = if (asExcel) {
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    } else {
+        "text/plain"
+    }
+
+    /** 先把表格写到应用私有缓存，两个按钮都从这份文件出发 */
+    fun buildFile(): File? {
         val ext = if (asExcel) "xlsx" else "txt"
         val dir = File(ctx.cacheDir, "export").apply { mkdirs() }
         val file = File(dir, ExportService.fileName(teamName, ext))
-        try {
-            if (asExcel) ExportService.writeXlsx(file, table, teamName.take(31)) else ExportService.writeTxt(file, table)
+        return try {
+            if (asExcel) {
+                ExportService.writeXlsx(file, table, teamName.take(31))
+            } else {
+                ExportService.writeTxt(file, table)
+            }
+            file
         } catch (e: Exception) {
             message = "生成表格失败：${e.message}"
-            return
+            null
         }
+    }
 
+    fun doSave() {
+        val file = buildFile() ?: return
+        val result = ExportSaver.save(ctx, file, mimeType)
+        message = result.message
+    }
+
+    fun doShare() {
+        val file = buildFile() ?: return
         val uri: Uri = FileProvider.getUriForFile(ctx, "${ctx.packageName}.fileprovider", file)
         val intent = Intent(Intent.ACTION_SEND).apply {
-            type = if (asExcel) {
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            } else {
-                "text/plain"
-            }
+            type = mimeType
             putExtra(Intent.EXTRA_STREAM, uri)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
@@ -218,15 +236,39 @@ fun ExportScreen(
                 modifier = Modifier.padding(bottom = 12.dp),
                 color = MaterialTheme.colorScheme.outlineVariant,
             )
-            Button(
-                onClick = { doExport() },
-                enabled = members.isNotEmpty(),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(58.dp),
-                shape = RoundedCornerShape(12.dp),
+            // 存/分享的结果固定贴在按钮上面，不跟着内容滚走——不然点了按钮看不到任何反馈
+            message?.let { text ->
+                Text(
+                    text = text,
+                    fontSize = 15.sp,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(bottom = 10.dp),
+                )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Text("做成表格，发出去", fontSize = 19.sp)
+                OutlinedButton(
+                    onClick = { doSave() },
+                    enabled = members.isNotEmpty(),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(58.dp),
+                    shape = RoundedCornerShape(12.dp),
+                ) {
+                    Text("保存到本地", fontSize = 18.sp)
+                }
+                Button(
+                    onClick = { doShare() },
+                    enabled = members.isNotEmpty(),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(58.dp),
+                    shape = RoundedCornerShape(12.dp),
+                ) {
+                    Text("分享", fontSize = 19.sp)
+                }
             }
         }
     }

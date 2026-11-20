@@ -16,10 +16,12 @@ object ExportService {
         SEQ("seq", "序号"),
         NAME("name", "姓名"),
         GENDER("gender", "性别"),
-        ID_NUMBER("idNumber", "身份证号"),
+        ID_TYPE("idType", "证件类型"),
+        ID_NUMBER("idNumber", "证件号码"),
         BIRTH("birth", "出生日期"),
-        NOTE("note", "备注"),
-        TAGS("tags", "标签"),
+        PHONE("phone", "手机"),
+        NOTE("note", "备注", defaultOn = false),
+        TAGS("tags", "标签", defaultOn = false),
     }
 
     enum class SortBy(val label: String) {
@@ -65,8 +67,11 @@ object ExportService {
                     Column.SEQ -> (index + 1).toString()
                     Column.NAME -> member.name
                     Column.GENDER -> IdCard.genderLabel(member.gender)
+                    // 目前只登记身份证；留着这一列是为了以后加护照、港澳通行证时表格结构不用改
+                    Column.ID_TYPE -> "身份证"
                     Column.ID_NUMBER -> member.idNumber
                     Column.BIRTH -> member.birthDate.orEmpty()
+                    Column.PHONE -> member.phone
                     Column.NOTE -> member.note.orEmpty()
                     Column.TAGS -> tagsByMember[member.id].orEmpty().joinToString("、")
                 }
@@ -84,7 +89,8 @@ object ExportService {
     fun writeXlsx(file: File, table: Table, sheetName: String) {
         val widths = table.header.mapIndexed { i, title ->
             when (title) {
-                "身份证号" -> 22
+                "证件号码" -> 22
+                "手机" -> 15
                 "备注" -> 20
                 "标签" -> 16
                 "序号" -> 6

@@ -141,6 +141,7 @@ class TeamViewModel(app: Application, private val teamId: Long) : AndroidViewMod
         name: String,
         gender: String,
         idNumber: String,
+        phone: String = "",
     ) {
         viewModelScope.launch {
             val cleanNumber = IdCard.normalizeNumber(idNumber)
@@ -151,6 +152,7 @@ class TeamViewModel(app: Application, private val teamId: Long) : AndroidViewMod
                     name = name.trim(),
                     gender = gender,
                     idNumber = cleanNumber,
+                    phone = phone.trim(),
                     birthDate = birth,
                     status = if (issues.isEmpty()) Member.STATUS_MANUAL_OK else Member.STATUS_NEED_REVIEW,
                     failReasons = issues.takeIf { it.isNotEmpty() }?.joinToString("；"),

@@ -15,8 +15,8 @@ android {
         applicationId = "com.kamikazeprpr.tourtool"
         minSdk = 24
         targetSdk = 35
-        versionCode = 13
-        versionName = "0.0.8"
+        versionCode = 14
+        versionName = "0.0.9"
         resourceConfigurations += listOf("zh", "zh-rCN")
     }
 
