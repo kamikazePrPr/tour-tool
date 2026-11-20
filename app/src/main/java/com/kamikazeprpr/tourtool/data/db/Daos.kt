@@ -31,9 +31,15 @@ interface TeamDao {
     @Query("SELECT COUNT(*) FROM member WHERE teamId = :teamId")
     fun observeMemberCount(teamId: Long): Flow<Int>
 
+    /** 首页要的是「每个团几个人」，一条 GROUP BY 拿全，别一个团开一条 Flow */
+    @Query("SELECT teamId, COUNT(*) AS count FROM member GROUP BY teamId")
+    fun observeCountsByTeam(): Flow<List<TeamMemberCount>>
+
     @Query("SELECT COUNT(*) FROM member WHERE teamId = :teamId AND status = :status")
     fun observeCountByStatus(teamId: Long, status: String): Flow<Int>
 }
+
+data class TeamMemberCount(val teamId: Long, val count: Int)
 
 @Dao
 interface MemberDao {

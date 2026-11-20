@@ -9,6 +9,7 @@ import com.kamikazeprpr.tourtool.data.db.TourDatabase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -19,6 +20,11 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
 
     val teams: StateFlow<List<Team>> = repo.teams()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    /** 团 id → 人数。一条 GROUP BY 查出来，团再多也只有一条 Flow */
+    val memberCounts: StateFlow<Map<Long, Int>> = repo.memberCounts()
+        .map { list -> list.associate { it.teamId to it.count } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
 
     private val _newTeamId = MutableStateFlow<Long?>(null)
     val newTeamId: StateFlow<Long?> = _newTeamId

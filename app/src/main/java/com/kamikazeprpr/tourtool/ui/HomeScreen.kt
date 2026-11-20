@@ -63,6 +63,7 @@ fun HomeScreen() {
     val vm: HomeViewModel = viewModel()
     val ctx = LocalContext.current
     val teams by vm.teams.collectAsStateWithLifecycle()
+    val counts by vm.memberCounts.collectAsStateWithLifecycle()
     var openTeamId by rememberSaveable { mutableStateOf<Long?>(null) }
     var showNewDialog by remember { mutableStateOf(false) }
     var editingTeam by remember { mutableStateOf<Team?>(null) }
@@ -135,10 +136,9 @@ fun HomeScreen() {
             )
         } else {
             teams.forEach { team ->
-                val count by vm.memberCount(team.id).collectAsStateWithLifecycle(initialValue = 0)
                 TeamCard(
                     team = team,
-                    memberCount = count,
+                    memberCount = counts[team.id] ?: 0,
                     onClick = { openTeamId = team.id },
                     onLongClick = { editingTeam = team },
                 )
@@ -460,7 +460,7 @@ private fun UpdateBanner() {
 
     LaunchedEffect(Unit) {
         com.kamikazeprpr.tourtool.data.AppLog.d("UPDATE", "开始检查版本")
-        when (val r = com.kamikazeprpr.tourtool.update.UpdateChecker.check()) {
+        when (val r = com.kamikazeprpr.tourtool.update.UpdateChecker.check(ctx)) {
             is com.kamikazeprpr.tourtool.update.UpdateChecker.CheckResult.Newer -> release = r.release
             is com.kamikazeprpr.tourtool.update.UpdateChecker.CheckResult.Failed ->
                 com.kamikazeprpr.tourtool.data.AppLog.d("UPDATE", "没查成：${r.reason}")

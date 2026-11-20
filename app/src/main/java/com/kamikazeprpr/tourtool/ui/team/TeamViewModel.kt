@@ -57,7 +57,8 @@ class TeamViewModel(app: Application, private val teamId: Long) : AndroidViewMod
      */
     fun importImages(uris: List<Uri>) {
         if (uris.isEmpty()) return
-        viewModelScope.launch {
+        // 整段跑在 Default 上：解码、识别、写日志、写库都不该占着主线程
+        viewModelScope.launch(Dispatchers.Default) {
             val app = getApplication<Application>()
             var autoOk = 0
             var review = 0
@@ -195,13 +196,22 @@ class TeamViewModel(app: Application, private val teamId: Long) : AndroidViewMod
     }
 
     companion object {
-        // 解码上限要高于识别尺寸，否则等于先毁掉细节再放大
-        private const val DECODE_MAX_SIDE = 3200
+        /**
+         * 解码上限。
+         * 识别用的是 2400，这里只比它高一点：高太多等于白占内存（3200 的图约 30MB，
+         * 加上两份工作图能到 80MB 以上，低端机直接崩），高得太少又等于先毁细节再放大。
+         */
+        private const val DECODE_MAX_SIDE = 2600
 
         fun factory(teamId: Long) = viewModelFactory {
             initializer {
                 TeamViewModel(this[APPLICATION_KEY] as Application, teamId)
             }
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        ocr.close()
     }
 }

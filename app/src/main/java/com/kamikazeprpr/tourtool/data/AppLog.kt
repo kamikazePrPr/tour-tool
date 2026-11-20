@@ -27,6 +27,24 @@ object AppLog {
     private val timeFmt = SimpleDateFormat("MM-dd HH:mm:ss.SSS", Locale.CHINA)
     private var appContext: Context? = null
 
+    /**
+     * 日志一律丢给这个单线程队列写盘。
+     * 原来是在调用线程里直接 appendText——识别时每张图要写四行，
+     * 而调用方在主线程，等于每张图都卡一下磁盘 IO。
+     */
+    private val writer = java.util.concurrent.Executors.newSingleThreadExecutor { r ->
+        Thread(r, "app-log-writer").apply { isDaemon = true }
+    }
+
+    /** 崩溃时用：把队列里剩的写完再返回，不然进程一死日志就丢了 */
+    fun flushBlocking(timeoutMs: Long = 400) {
+        try {
+            writer.shutdown()
+            writer.awaitTermination(timeoutMs, java.util.concurrent.TimeUnit.MILLISECONDS)
+        } catch (_: Throwable) {
+        }
+    }
+
     fun init(ctx: Context) {
         appContext = ctx.applicationContext
         cleanup(ctx)
@@ -35,6 +53,7 @@ object AppLog {
             try {
                 e("CRASH", "线程 ${thread.name} 崩了：${throwable.javaClass.simpleName}: ${throwable.message}")
                 throwable.stackTrace.take(30).forEach { e("CRASH", "  at $it") }
+                flushBlocking()
             } catch (_: Throwable) {
                 // 写日志本身失败就算了，不能盖住原始崩溃
             }
@@ -60,20 +79,26 @@ object AppLog {
     @Synchronized
     private fun write(level: String, tag: String, msg: String) {
         val ctx = appContext ?: return
+        val line = "${timeFmt.format(Date())} $level/$tag: $msg\n"
         try {
-            val dir = File(ctx.filesDir, DIR).apply { mkdirs() }
-            val day = dateFmt.format(Date())
-            var file = File(dir, "app-$day.log")
-            var index = 1
-            while (file.length() > MAX_BYTES) {
-                file = File(dir, "app-$day-$index.log")
-                index++
-                if (index > 20) break
+            writer.execute {
+                try {
+                    val dir = File(ctx.filesDir, DIR).apply { mkdirs() }
+                    val day = dateFmt.format(Date())
+                    var file = File(dir, "app-$day.log")
+                    var index = 1
+                    while (file.length() > MAX_BYTES) {
+                        file = File(dir, "app-$day-$index.log")
+                        index++
+                        if (index > 20) break
+                    }
+                    file.appendText(line, Charsets.UTF_8)
+                } catch (_: Throwable) {
+                    // 日志失败绝不能影响主流程
+                }
             }
-            val line = "${timeFmt.format(Date())} $level/$tag: $msg\n"
-            file.appendText(line, Charsets.UTF_8)
         } catch (_: Throwable) {
-            // 日志失败绝不能影响主流程
+            // 队列被关掉（进程要退出了）就静默丢弃
         }
     }
 

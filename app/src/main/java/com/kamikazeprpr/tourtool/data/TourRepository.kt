@@ -29,6 +29,10 @@ class TourRepository(private val db: TourDatabase) {
 
     fun memberCount(teamId: Long): Flow<Int> = db.teamDao().observeMemberCount(teamId)
 
+    /** 首页一次拿全所有团的人数 */
+    fun memberCounts(): Flow<List<com.kamikazeprpr.tourtool.data.db.TeamMemberCount>> =
+        db.teamDao().observeCountsByTeam()
+
     /** 「要你看一眼」的人数：识别失败、待核对、未验对，都算。 */
     fun needReviewCount(teamId: Long): Flow<Int> =
         db.teamDao().observeCountByStatus(teamId, Member.STATUS_NEED_REVIEW)

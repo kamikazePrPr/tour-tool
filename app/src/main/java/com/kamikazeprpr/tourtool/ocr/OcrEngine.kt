@@ -9,41 +9,58 @@ import android.graphics.Paint
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.chinese.ChineseTextRecognizerOptions
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.suspendCancellableCoroutine
+import java.io.Closeable
 import kotlin.coroutines.resume
 
 /**
  * 三个通道各读一遍。
  *
  * 同一张图用同一个引擎连跑三次结果会一模一样，所以三次必须是三种不同的输入：
- *  A 原图缩小（正常拍摄，求最好那次）
- *  B 灰度 + 拉对比度（对付塑料卡反光和贴膜）
- *  C 轻微旋转（对付手持歪、对焦软）
+ *  A 整图缩到 2400（正常拍摄，求最好那次）
+ *  B A 再去饱和 + 拉对比度（对付塑料卡反光和贴膜）
+ *  C 只取卡片上半段放大（对付蓝色小标签、姓名那一块）
+ *
+ * 三个通道是**串行**跑的：并行会让三份大图同时驻留内存，低端机直接 OOM，
+ * 而 ML Kit 内部本来就是排队处理，并行换不来时间。
  */
-class OcrEngine {
+class OcrEngine : Closeable {
 
     private val recognizer =
         TextRecognition.getClient(ChineseTextRecognizerOptions.Builder().build())
 
-    suspend fun readThreeChannels(source: Bitmap): List<String> = coroutineScope {
-        val variants = buildVariants(source)
-        try {
-            variants.map { bmp -> async { recognize(bmp) } }.awaitAll()
-        } finally {
-            variants.forEach { v -> if (v !== source && !v.isRecycled) v.recycle() }
+    suspend fun readThreeChannels(source: Bitmap): List<String> {
+        val out = ArrayList<String>(3)
+        // A：整图
+        out += runChannel(source) { BitmapOps.scaleToMax(source, MAX_SIDE) }
+        // B：整图灰度高对比
+        out += runChannel(source) {
+            val scaled = BitmapOps.scaleToMax(source, MAX_SIDE)
+            try {
+                BitmapOps.grayscaleHighContrast(scaled)
+            } finally {
+                if (scaled !== source && !scaled.isRecycled) scaled.recycle()
+            }
         }
+        // C：上半段放大（卡片上姓名的位置）
+        out += runChannel(source) {
+            BitmapOps.cropZoom(source, topFraction = 0f, bottomFraction = 0.55f, maxSide = ROI_SIDE)
+        }
+        return out
     }
 
-    private fun buildVariants(src: Bitmap): List<Bitmap> {
-        val a = BitmapOps.scaleToMax(src, MAX_SIDE)
-        val b = BitmapOps.grayscaleHighContrast(a)
-        // 通道 C：只取卡片上半部分（姓名/性别/出生）放大，专治蓝色小标签读不清。
-        // 号码交给 A、B 两个整图通道，实测 2400 分辨率下号码基本一次读对。
-        val c = BitmapOps.cropZoom(src, topFraction = 0f, bottomFraction = 0.55f, maxSide = ROI_SIDE)
-        return listOf(a, b, c)
+    /**
+     * 造一张工作图、识别、立刻回收，任何时刻只有一份大图活着。
+     * 注意不能回收 [source]——图比 MAX_SIDE 还小的时候 scaleToMax 会原样返回它，
+     * 这时候要是回收了，后面的通道就拿到一张死图。
+     */
+    private suspend fun runChannel(source: Bitmap, make: () -> Bitmap): String {
+        val bmp = make()
+        return try {
+            recognize(bmp)
+        } finally {
+            if (bmp !== source && !bmp.isRecycled) bmp.recycle()
+        }
     }
 
     private suspend fun recognize(bmp: Bitmap): String =
@@ -58,6 +75,11 @@ class OcrEngine {
                 }
         }
 
+    /** 退出这个团就把识别器关掉，不然每进一次团都留一个 ML Kit 客户端 */
+    override fun close() {
+        runCatching { recognizer.close() }
+    }
+
     companion object {
         /**
          * 识别前把长边压到 2400。
@@ -66,7 +88,7 @@ class OcrEngine {
          */
         const val MAX_SIDE = 2400
 
-        /** 专门读号码的下半部分裁片，放大到这个长边 */
+        /** 通道 C 的裁片长边：裁完再放大，比超分稳，因为只是把本来就在的像素铺开 */
         const val ROI_SIDE = 2000
     }
 }
@@ -76,7 +98,8 @@ object BitmapOps {
 
     fun scaleToMax(src: Bitmap, maxSide: Int): Bitmap {
         val longer = maxOf(src.width, src.height)
-        if (longer <= maxSide) return src.copy(Bitmap.Config.ARGB_8888, false)
+        // 本来就够小就别复制一份，省一份整图内存；调用方回收时会判断是不是原图
+        if (longer <= maxSide) return src
         val scale = maxSide.toFloat() / longer
         val w = (src.width * scale).toInt().coerceAtLeast(1)
         val h = (src.height * scale).toInt().coerceAtLeast(1)
@@ -116,17 +139,16 @@ object BitmapOps {
     }
 
     /**
-     * 取图片下部一段（身份证的号码在卡片下方），把这块放大到 maxSide。
+     * 取图片一段（身份证的姓名在上半、号码在下半），把这块放大到 maxSide。
      * 这比给整张图做超分有效：不做任何"插值猜笔画"，只是把本来就在原图里的像素按比例放大。
      */
     fun cropZoom(src: Bitmap, topFraction: Float, bottomFraction: Float, maxSide: Int): Bitmap {
         val startY = (src.height * topFraction).toInt().coerceIn(0, src.height - 1)
         val endY = (src.height * bottomFraction).toInt().coerceIn(startY + 1, src.height)
         val cropped = Bitmap.createBitmap(src, 0, startY, src.width, endY - startY)
-        return try {
-            scaleToMax(cropped, maxSide)
-        } finally {
-            if (!cropped.isRecycled) cropped.recycle()
-        }
+        // 裁片本身就比 maxSide 小时 scaleToMax 会原样返回它，这时不能回收
+        val zoomed = scaleToMax(cropped, maxSide)
+        if (zoomed !== cropped && !cropped.isRecycled) cropped.recycle()
+        return zoomed
     }
 }
