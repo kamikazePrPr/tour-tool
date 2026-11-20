@@ -95,8 +95,9 @@ fun MemberEditScreen(
 
     val cleanNumber = IdCard.normalizeNumber(idNumber)
     val numberIssues = if (cleanNumber.length >= 15) IdCard.validate(cleanNumber) else emptyList()
-    // 手机号可以不填；填了就得是 11 位、1 开头，填错不让存
-    val phoneOk = phone.isBlank() || (phone.length == 11 && phone.startsWith("1"))
+    // 手机号固定 11 位：不填可以不报错，填了位数不对就当场提示，边输边算
+    val phoneFilled = phone.isNotEmpty()
+    val phoneOk = !phoneFilled || phone.length == 11
     val canSave = name.isNotBlank() && cleanNumber.length == 18 && numberIssues.isEmpty() && phoneOk
 
     val transformState = rememberTransformableState { zoom, pan, _ ->
@@ -259,9 +260,10 @@ fun MemberEditScreen(
 
             OutlinedTextField(
                 value = phone,
-                onValueChange = { input -> phone = input.filter { it.isDigit() }.take(11) },
+                // 不截断：让多输的那几位留在框里，配合下面的红字才知道自己输错了几位
+                onValueChange = { input -> phone = input.filter { it.isDigit() } },
                 label = { Text("手机号", fontSize = 16.sp) },
-                placeholder = { Text("可以不填", fontSize = 18.sp) },
+                placeholder = { Text("可以不填，填就要 11 位", fontSize = 17.sp) },
                 singleLine = true,
                 isError = !phoneOk,
                 textStyle = MaterialTheme.typography.bodyLarge.copy(fontSize = 20.sp),
@@ -271,7 +273,7 @@ fun MemberEditScreen(
             if (!phoneOk) {
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    text = "手机号要 11 位，1 开头",
+                    text = "手机号有误，要 11 位（现在 ${phone.length} 位）",
                     fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = StateBad,
